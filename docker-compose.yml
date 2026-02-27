@@ -1,0 +1,33 @@
+version: "3.7"
+services:
+  bugarsehat:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: bugarsehat-app
+    container_name: bugarsehat-app-live
+    volumes:
+         - /home/storage_bugarsehat:/var/www/html/bugar-sehat/storage/app:rw
+    ports:
+        - "127.0.0.1:8888:80"
+    restart: unless-stopped
+    environment:
+      APP_ENV: "development"
+      REDIRECT_HTTPS: "true"
+      APP_DEBUG: "TRUE"
+      APP_URL: "https://berteknologi.id/bugar-sehat"
+      DB_CONNECTION: "mysql"
+      DB_HOST: "dbmysql"
+      DB_PORT: "3306"
+      DB_DATABASE: "bugarsehat"
+      DB_USERNAME: "dbguest"
+      DB_PASSWORD: "aqswdefrgthyjukilo;p"
+    networks:
+      - bugarsehatnetwork
+      - simpkp_simpkpnetwork
+
+networks:
+  bugarsehatnetwork:
+  simpkp_simpkpnetwork:
+    external: true
+
