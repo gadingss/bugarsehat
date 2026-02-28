@@ -219,12 +219,21 @@ class ServiceController extends Controller
             abort(403, 'Unauthorized access');
         }
 
+        // Localhost fallback: if Midtrans redirects with settlement/capture, update the status here
+        // to waiting_validation so the staff can review it.
+        if ($request->has('transaction_status') && in_array($request->transaction_status, ['settlement', 'capture'])) {
+            if ($transaction->status === 'pending') {
+                $transaction->status = 'waiting_validation';
+                $transaction->save();
+            }
+        }
+
         $config = [
             'title' => 'Booking Berhasil',
             'menu' => MenuRepository::generate($request),
         ];
 
-        return view('services.booking-success', compact('config', 'transaction'));
+        return view('services.booking-success', compact('config', 'transaction', 'request'));
     }
 
     public function myBookings(Request $request)

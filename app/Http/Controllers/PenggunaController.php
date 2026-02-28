@@ -21,9 +21,7 @@ class PenggunaController extends Controller
             'menu' => MenuRepository::generate($request),
         ];
 
-        $pengguna = User::whereIn('role', ['Owner', 'Staff'])
-            ->orderBy('id', 'asc')
-            ->get();
+        $pengguna = User::orderBy('id', 'asc')->get();
 
         // FIX: Menggunakan view 'pengguna.index'
         return view('pengguna.index', compact('config', 'pengguna'));
@@ -48,47 +46,47 @@ class PenggunaController extends Controller
     }
 
     public function storeMember(Request $request)
-{
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|email|unique:users,email',
-        'phone' => 'nullable|string|max:20',
-        'password' => 'required|string|min:8|confirmed',
-    ]);
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|string|max:20',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
 
-    User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'phone' => $request->phone,
-        'password' => Hash::make($request->password),
-        'role' => 'Member',
-    ]);
+        User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'password' => Hash::make($request->password),
+            'role' => 'Member',
+        ]);
 
-    return redirect()->route('member.index')->with('success', 'Member berhasil ditambahkan!');
-}
+        return redirect()->route('member.index')->with('success', 'Member berhasil ditambahkan!');
+    }
 
-public function updateMember(Request $request, $id)
-{
-    $member = User::findOrFail($id);
+    public function updateMember(Request $request, $id)
+    {
+        $member = User::findOrFail($id);
 
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => ['required','email', Rule::unique('users')->ignore($member->id)],
-        'phone' => 'nullable|string|max:20',
-    ]);
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'email', Rule::unique('users')->ignore($member->id)],
+            'phone' => 'nullable|string|max:20',
+        ]);
 
-    $member->update($request->only(['name','email','phone']));
+        $member->update($request->only(['name', 'email', 'phone']));
 
-    return redirect()->route('member.index')->with('success', 'Member berhasil diperbarui!');
-}
+        return redirect()->route('member.index')->with('success', 'Member berhasil diperbarui!');
+    }
 
-public function destroyMember($id)
-{
-    $member = User::findOrFail($id);
-    $member->delete();
+    public function destroyMember($id)
+    {
+        $member = User::findOrFail($id);
+        $member->delete();
 
-    return redirect()->route('member.index')->with('success', 'Member berhasil dihapus!');
-}
+        return redirect()->route('member.index')->with('success', 'Member berhasil dihapus!');
+    }
 
 
     /**
@@ -114,12 +112,18 @@ public function destroyMember($id)
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'nullable|string|max:20',
-            'role' => 'required|string|in:User:Owner,User:Staff,User:Trainer',
+            'role' => 'required|string|in:User:Owner,User:Staff,User:Trainer,User:Member',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        // Map to existing enum values: keep 'owner' for owner, otherwise use 'staff' for staff/trainer
-        $enumRole = $request->role === 'User:Owner' ? 'owner' : 'staff';
+        // Map to existing enum values: keep 'owner' for owner, otherwise use 'staff' or 'trainer'
+        $enumRole = 'staff';
+        if ($request->role === 'User:Owner')
+            $enumRole = 'owner';
+        if ($request->role === 'User:Trainer')
+            $enumRole = 'trainer';
+        if ($request->role === 'User:Member')
+            $enumRole = 'member';
 
         $user = User::create([
             'name' => $request->name,
@@ -163,25 +167,27 @@ public function destroyMember($id)
                 Rule::unique('users')->ignore($pengguna->id),
             ],
             'phone' => 'nullable|string|max:20',
-            'role' => 'required|string|in:User:Owner,User:Staff,User:Trainer',
+            'role' => 'required|string|in:User:Owner,User:Staff,User:Trainer,User:Member',
         ]);
 
         $pengguna->update($request->only(['name', 'email', 'phone']));
 
         // Sync Spatie role and keep enum column for compatibility
         $pengguna->syncRoles([$request->role]);
-        $pengguna->role = $request->role === 'User:Owner' ? 'owner' : 'staff';
+
+        $enumRole = 'staff';
+        if ($request->role === 'User:Owner')
+            $enumRole = 'owner';
+        if ($request->role === 'User:Trainer')
+            $enumRole = 'trainer';
+        if ($request->role === 'User:Member')
+            $enumRole = 'member';
+
+        $pengguna->role = $enumRole;
         $pengguna->save();
 
-        if ($request->filled('password')) {
-            $request->validate([
-                'password' => 'string|min:8|confirmed',
-            ]);
-            $pengguna->update(['password' => Hash::make($request->password)]);
-        }
-
         // FIX: Redirect ke 'pengguna.index'
-        return redirect()->route('pengguna')->with('success', 'Data pengguna berhasil diperbarui!');
+        return redirect()->route('pengguna.index')->with('success', 'Data pengguna berhasil diperbarui!');
     }
 
     /**
@@ -192,6 +198,6 @@ public function destroyMember($id)
         $pengguna->delete();
 
         // FIX: Redirect ke 'pengguna.index'
-        return redirect()->route('pengguna')->with('success', 'Pengguna berhasil dihapus!');
+        return redirect()->route('pengguna.index')->with('success', 'Pengguna berhasil dihapus!');
     }
 }

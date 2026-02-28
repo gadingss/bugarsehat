@@ -325,7 +325,7 @@
                                     </span>
                                 </div>
                                 <div class="flex-grow-1">
-                                    <div class="fw-semibold">{{ $transaction->product->name ?? 'Produk' }}</div>
+                                    <div class="fw-semibold">{{ $transaction->item->name ?? 'Produk/Paket' }}</div>
                                     <div class="text-muted fs-7">{{ \Carbon\Carbon::parse($transaction->transaction_date)->format('d M Y H:i') }}</div>
                                 </div>
                                 <div class="text-end">

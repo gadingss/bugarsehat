@@ -50,7 +50,8 @@ class MidtransController extends Controller
             switch ($currentStatus) {
                 case 'capture':
                 case 'settlement':
-                    $serviceTransaction->status = 'scheduled';
+                    // Always require staff validation for service bookings
+                    $serviceTransaction->status = 'waiting_validation';
                     break;
                 case 'pending':
                     $serviceTransaction->status = 'pending';
@@ -63,16 +64,7 @@ class MidtransController extends Controller
             }
             $serviceTransaction->save();
 
-            // Link trainer-member if scheduled
-            if ($serviceTransaction->status === 'scheduled' && $serviceTransaction->trainer_id) {
-                \App\Models\TrainerMember::firstOrCreate([
-                    'trainer_id' => $serviceTransaction->trainer_id,
-                    'member_id' => $serviceTransaction->user_id,
-                ], [
-                    'assigned_at' => now(),
-                    'status' => 'active'
-                ]);
-            }
+            // linking will be done after staff validation
 
             return response('OK', 200);
         }
@@ -81,7 +73,7 @@ class MidtransController extends Controller
         if (str_starts_with($orderId, 'PRD-')) {
             $parts = explode('-', $orderId);
             $transactionId = $parts[1];
-            $transaction = \App\Models\Transaction::find($transactionId);
+            $transaction = Transaction::find($transactionId);
 
             if (!$transaction) {
                 Log::warning('Midtrans notification received for unknown product transaction: ' . $orderId);

@@ -54,7 +54,7 @@ Route::middleware('guest')->group(function () {
 Route::post('/midtrans/notification', [\App\Http\Controllers\MidtransController::class, 'notification'])->name('midtrans.notification');
 Route::middleware('auth:web')->group(function () {
     Route::get('/home', [HomeController::class, 'index'])->name('home')->middleware(['can:home']);
-    Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna')->middleware(['can:pengguna']);
+    Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index')->middleware(['can:pengguna']);
     Route::get('/role_assignment', [RoleAssignmentController::class, 'index'])->name('role_assignment')->middleware(['can:role_assignment']);
     Route::get('/packet_membership', [PacketMembershipController::class, 'index'])->name('packet_membership')->middleware(['can:packet_membership']);
     Route::get('/packet_membership/{id}', [PacketMembershipController::class, 'show'])->name('packet_membership.show')->middleware(['can:packet_membership']);
@@ -325,8 +325,9 @@ Route::middleware('auth:web')->group(function () {
     Route::post('/pengguna/store', [PenggunaController::class, 'store'])->name('pengguna.store');
     Route::get('/user_membership', [PenggunaController::class, 'daftarMember'])->name('user_membership')->middleware(['can:user_membership']);
 
-    Route::put('/pengguna/{id}', [PenggunaController::class, 'update'])->name('pengguna.edit')->middleware(['can:pengguna']);
-    Route::delete('/pengguna/{id}', [PenggunaController::class, 'destroy'])->name('pengguna.destroy')->middleware(['can:pengguna']);
+    Route::get('/pengguna/{pengguna}/edit', [PenggunaController::class, 'edit'])->name('pengguna.edit')->middleware(['can:pengguna']);
+    Route::put('/pengguna/{pengguna}', [PenggunaController::class, 'update'])->name('pengguna.update')->middleware(['can:pengguna']);
+    Route::delete('/pengguna/{pengguna}', [PenggunaController::class, 'destroy'])->name('pengguna.destroy')->middleware(['can:pengguna']);
 
     // --- configuratiin payemnt --
     Route::get('/konfigurasi-pembayaran', [ConfigurationPaymentController::class, 'index'])->name('configuration.payment.index');
