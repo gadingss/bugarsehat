@@ -95,6 +95,12 @@ class ServiceTransactionController extends Controller
     {
         $this->authorize('view', $serviceTransaction);
 
+        $serviceTransaction->load([
+            'serviceSessions' => function ($q) {
+                $q->orderBy('session_number', 'asc');
+            }
+        ]);
+
         // Sidebar config
         $config = [
             'title' => 'Detail Transaction',
@@ -141,8 +147,26 @@ class ServiceTransactionController extends Controller
                 ]);
             }
 
+            // Auto-generate sessions from templates if they exist
+            $templates = $serviceTransaction->service->sessionTemplates;
+            foreach ($templates as $template) {
+                $serviceTransaction->serviceSessions()->create([
+                    'session_number' => $template->session_number,
+                    'topic' => $template->topic,
+                    'scheduled_date' => $serviceTransaction->scheduled_date, // Default to initial booking date
+                    'trainer_id' => $serviceTransaction->trainer_id,
+                    'status' => 'pending',
+                ]);
+            }
+
             DB::commit();
-            return redirect()->back()->with('success', 'Transaksi berhasil disetujui dan layanan telah dijadwalkan');
+
+            $msg = 'Transaksi berhasil disetujui';
+            if (count($templates) > 0) {
+                $msg .= ' dan ' . count($templates) . ' sesi telah dijadwalkan secara otomatis';
+            }
+
+            return redirect()->back()->with('success', $msg);
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Gagal menyetujui transaksi: ' . $e->getMessage());
@@ -168,5 +192,65 @@ class ServiceTransactionController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Transaksi berhasil ditolak');
+    }
+
+    public function storeSession(Request $request, ServiceTransaction $serviceTransaction)
+    {
+        if (!Auth::user()->hasRole('User:Staff') && !Auth::user()->hasRole('User:Owner')) {
+            abort(403);
+        }
+
+        $request->validate([
+            'topic' => 'required|string|max:255',
+            'scheduled_date' => 'required|date',
+        ]);
+
+        $nextSessionNumber = $serviceTransaction->serviceSessions()->max('session_number') + 1;
+
+        $serviceTransaction->serviceSessions()->create([
+            'session_number' => $nextSessionNumber,
+            'topic' => $request->topic,
+            'scheduled_date' => $request->scheduled_date,
+            'trainer_id' => $serviceTransaction->trainer_id,
+            'status' => 'pending',
+        ]);
+
+        return redirect()->back()->with('success', 'Sesi berhasil ditambahkan');
+    }
+
+    public function updateSession(Request $request, \App\Models\ServiceSession $serviceSession)
+    {
+        if (!Auth::user()->hasRole('User:Staff') && !Auth::user()->hasRole('User:Owner')) {
+            abort(403);
+        }
+
+        $request->validate([
+            'topic' => 'required|string|max:255',
+            'scheduled_date' => 'required|date',
+        ]);
+
+        $serviceSession->update([
+            'topic' => $request->topic,
+            'scheduled_date' => $request->scheduled_date,
+        ]);
+
+        return redirect()->back()->with('success', 'Sesi berhasil diperbarui');
+    }
+
+    public function deleteSession(\App\Models\ServiceSession $serviceSession)
+    {
+        if (!Auth::user()->hasRole('User:Staff') && !Auth::user()->hasRole('User:Owner')) {
+            abort(403);
+        }
+
+        $serviceSession->delete();
+
+        // Reorder session numbers
+        $sessions = $serviceSession->serviceTransaction->serviceSessions()->orderBy('session_number')->get();
+        foreach ($sessions as $index => $session) {
+            $session->update(['session_number' => $index + 1]);
+        }
+
+        return redirect()->back()->with('success', 'Sesi berhasil dihapus');
     }
 }

@@ -84,7 +84,7 @@
                         @forelse($upcomingSchedule as $item)
                             <tr>
                                 <td>
-                                    <span class="text-gray-800 fw-bold">{{ $item['date'] }}</span>
+                                    <span class="text-gray-800 fw-bold">{{ $item['display_date'] }}</span>
                                 </td>
                                 <td>
                                     <span class="badge badge-light-primary fs-7 fw-bold">{{ $item['time'] }}</span>
@@ -96,7 +96,7 @@
                                     @if($item['type'] == 'Class')
                                         <span class="badge badge-light-info">Class</span>
                                     @else
-                                        <span class="badge badge-light-success">Personal Training</span>
+                                        <span class="badge badge-light-success">{{ $item['type'] }}</span>
                                     @endif
                                 </td>
                                 <td>

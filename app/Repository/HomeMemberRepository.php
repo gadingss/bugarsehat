@@ -79,11 +79,7 @@ class HomeMemberRepository
                 ->take(3)
                 ->get();
 
-            $recentProgress = \App\Models\TrainingProgress::where('member_id', $user->id)
-                ->with('trainer')
-                ->latest('date')
-                ->take(3)
-                ->get();
+            $recentProgress = collect();
 
             $availablePackages = MembershipPacket::where('is_active', true)->orderBy('price', 'asc')->take(3)->get();
 

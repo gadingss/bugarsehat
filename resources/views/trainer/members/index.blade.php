@@ -50,9 +50,8 @@
                                         class="text-dark fw-bold text-hover-primary d-block mb-1 fs-6">{{ $member->created_at->format('d M Y') }}</a>
                                 </td>
                                 <td class="text-end">
-                                    <a href="{{ route('trainer.progress.create', ['member_id' => $member->id]) }}"
-                                        class="btn btn-sm btn-light-primary">
-                                        <i class="fas fa-plus"></i> Add Progress
+                                    <a href="{{ route('trainer.progress.index') }}" class="btn btn-sm btn-light-primary">
+                                        <i class="fas fa-list"></i> Kelola Progress
                                     </a>
                                 </td>
                             </tr>

@@ -200,83 +200,105 @@ class CheckinController extends Controller
      * Centralized method to perform a check-in.
      */
     private function performCheckin($userId, $request, $staffId = null)
-{
-    $user = User::find($userId);
+    {
+        $user = User::find($userId);
 
-    if (!$user) {
-        return response()->json(['success' => false, 'message' => 'Member tidak ditemukan.'], 404);
-    }
-
-    $activeMembership = Membership::where('user_id', $user->id)
-        ->where('status', 'active')
-        ->first();
-
-    if (!$activeMembership) {
-        return response()->json(['success' => false, 'message' => 'Member tidak memiliki membership aktif.'], 400);
-    }
-
-    if ($activeMembership->isExpired()) {
-        return response()->json(['success' => false, 'message' => 'Membership member telah kedaluwarsa.'], 400);
-    }
-
-    if ($activeMembership->remaining_visits !== 999 && $activeMembership->remaining_visits <= 0) {
-        return response()->json(['success' => false, 'message' => 'Kuota kunjungan member telah habis.'], 400);
-    }
-
-    $todayCheckin = CheckinLog::where('user_id', $user->id)
-        ->today()
-        ->first();
-
-    if ($todayCheckin && is_null($todayCheckin->checkout_time)) {
-        return response()->json(['success' => false, 'message' => 'Member sudah melakukan check-in hari ini dan belum checkout.'], 400);
-    }
-    
-    if ($todayCheckin && !is_null($todayCheckin->checkout_time)) {
-        return response()->json(['success' => false, 'message' => 'Member sudah menyelesaikan sesi latihan hari ini.'], 400);
-    }
-
-    DB::beginTransaction();
-    try {
-        $checkinLog = CheckinLog::create([
-            'user_id' => $user->id,
-            'staff_id' => $staffId,
-            'membership_id' => $activeMembership->id,
-            'checkin_time' => now(),
-            'notes' => $request->notes
-        ]);
-
-        if ($activeMembership->remaining_visits != 999) {
-            $activeMembership->decrement('remaining_visits');
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Member tidak ditemukan.'], 404);
         }
 
-        DB::commit();
+        // 1. Cek Membership Gym biasa
+        $activeMembership = Membership::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->first();
 
-        // --- PERBAIKAN DI SINI ---
-        // Logika dibuat lebih aman untuk mencegah error jika staff tidak ditemukan
-        $checkedInBy = 'Self'; // Nilai default
-        if ($staffId) {
-            $staffUser = User::find($staffId);
-            // Cek apakah staffUser ditemukan sebelum mengambil namanya
-            $checkedInBy = $staffUser ? $staffUser->name : 'Staff (Not Found)';
+        // 2. Cek Sesi Layanan/PT hari ini
+        $scheduledSession = \App\Models\ServiceSession::whereHas('serviceTransaction', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })
+            ->whereDate('scheduled_date', now()->toDateString())
+            ->where('status', 'pending')
+            ->orderBy('scheduled_date', 'asc') // Pick the earliest one if multiple
+            ->first();
+
+        // Jika tidak punya keduanya, tolak
+        if (!$activeMembership && !$scheduledSession) {
+            return response()->json(['success' => false, 'message' => 'Member tidak memiliki membership aktif atau jadwal layanan hari ini.'], 400);
         }
-        // --- AKHIR PERBAIKAN ---
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Check-in berhasil! Selamat berlatih.',
-            'data' => [
-                'member_name' => $user->name,
-                'checkin_time' => $checkinLog->checkin_time->format('H:i'),
-                'remaining_visits' => $activeMembership->fresh()->remaining_visits,
-                'checked_in_by' => $checkedInBy // Menggunakan variabel yang sudah aman
-            ]
-        ]);
-    } catch (\Exception $e) {
-        DB::rollback();
-        Log::error('Checkin failed for user ' . $userId . ': ' . $e->getMessage());
-        return response()->json(['success' => false, 'message' => 'Gagal melakukan check-in: Terjadi kesalahan pada server.'], 500);
+        // Jika punya membership, validasi kuota & expired
+        if ($activeMembership) {
+            if ($activeMembership->isExpired()) {
+                return response()->json(['success' => false, 'message' => 'Membership member telah kedaluwarsa.'], 400);
+            }
+
+            if ($activeMembership->remaining_visits !== 999 && $activeMembership->remaining_visits <= 0) {
+                return response()->json(['success' => false, 'message' => 'Kuota kunjungan member telah habis.'], 400);
+            }
+        }
+
+        $todayCheckin = CheckinLog::where('user_id', $user->id)
+            ->today()
+            ->first();
+
+        if ($todayCheckin && is_null($todayCheckin->checkout_time)) {
+            return response()->json(['success' => false, 'message' => 'Member sudah melakukan check-in hari ini dan belum checkout.'], 400);
+        }
+
+        if ($todayCheckin && !is_null($todayCheckin->checkout_time)) {
+            return response()->json(['success' => false, 'message' => 'Member sudah menyelesaikan sesi latihan hari ini.'], 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            $checkinLog = CheckinLog::create([
+                'user_id' => $user->id,
+                'staff_id' => $staffId,
+                'membership_id' => $activeMembership ? $activeMembership->id : null,
+                'checkin_time' => now(),
+                'notes' => $request->notes
+            ]);
+
+            if ($activeMembership && $activeMembership->remaining_visits != 999) {
+                $activeMembership->decrement('remaining_visits');
+            }
+
+            // Link to Service Session if member has one scheduled today
+            if ($scheduledSession) {
+                $scheduledSession->update([
+                    'status' => 'attended',
+                    'checkin_id' => $checkinLog->id
+                ]);
+            }
+
+            DB::commit();
+
+            // --- PERBAIKAN DI SINI ---
+            // Logika dibuat lebih aman untuk mencegah error jika staff tidak ditemukan
+            $checkedInBy = 'Self'; // Nilai default
+            if ($staffId) {
+                $staffUser = User::find($staffId);
+                // Cek apakah staffUser ditemukan sebelum mengambil namanya
+                $checkedInBy = $staffUser ? $staffUser->name : 'Staff (Not Found)';
+            }
+            // --- AKHIR PERBAIKAN ---
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Check-in berhasil! Selamat berlatih.',
+                'data' => [
+                    'member_name' => $user->name,
+                    'checkin_time' => $checkinLog->checkin_time->format('H:i'),
+                    'remaining_visits' => $activeMembership->fresh()->remaining_visits,
+                    'checked_in_by' => $checkedInBy // Menggunakan variabel yang sudah aman
+                ]
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Checkin failed for user ' . $userId . ': ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal melakukan check-in: Terjadi kesalahan pada server.'], 500);
+        }
     }
-}
 
     public function staffQrScanner(Request $request)
     {
@@ -462,8 +484,8 @@ class CheckinController extends Controller
         $manualCode = strtoupper(\Illuminate\Support\Str::random(8));
 
         DB::table('checkin_codes')->insert([
-            'user_id'    => $user->id,
-            'code'       => $manualCode,
+            'user_id' => $user->id,
+            'code' => $manualCode,
             'created_at' => now(),
             'expires_at' => now()->addMinutes(1)
         ]);
@@ -484,7 +506,7 @@ class CheckinController extends Controller
             'config'
         ));
     }
-    
+
     // Perhatikan, kurung kurawal yang salah sudah dihapus dari sini
 
     /**
@@ -531,7 +553,7 @@ class CheckinController extends Controller
                 'message' => 'Kode check-in telah kedaluwarsa. Silakan minta member untuk membuat kode baru.'
             ], 400);
         }
-        
+
         // Cek apakah kode sudah pernah digunakan (membutuhkan kolom 'used_at')
         if (!empty($checkinCode->used_at)) {
             return response()->json([
@@ -550,7 +572,7 @@ class CheckinController extends Controller
 
             // Dapatkan ID member dari kode
             $memberId = $checkinCode->user_id;
-            
+
             // Lakukan commit untuk update 'used_at' sebelum memanggil method lain
             DB::commit();
 

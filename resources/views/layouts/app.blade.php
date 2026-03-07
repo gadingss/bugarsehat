@@ -2,7 +2,7 @@
 <html lang="en">
     <!--begin::Head-->
     <head>
-        <base href="{{ config('app.url') }}" />
+        {{-- <base href="{{ config('app.url') }}" /> --}}
         <title>{{ config('app.name', 'Laravel') }} @hasSection('title') [@yield('title')] @endif</title>
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta charset="utf-8" />

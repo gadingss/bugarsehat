@@ -49,9 +49,51 @@
                                                 WIB</span>
                                         </td>
                                         <td class="text-end pe-4">
-                                            <span class="badge badge-light-primary">{{ ucfirst($ub->status) }}</span>
+                                            <span class="badge badge-light-primary mb-2">{{ ucfirst($ub->status) }}</span>
+                                            @if($ub->serviceSessions->count() > 0)
+                                                <button class="btn btn-sm btn-icon btn-light btn-active-light-primary w-30px h-30px" type="button" data-bs-toggle="collapse" data-bs-target="#sessions-ub-{{ $ub->id }}">
+                                                    <i class="fas fa-chevron-down"></i>
+                                                </button>
+                                            @endif
                                         </td>
                                     </tr>
+                                    @if($ub->serviceSessions->count() > 0)
+                                    <tr id="sessions-ub-{{ $ub->id }}" class="collapse bg-light-secondary">
+                                        <td colspan="4" class="px-6 py-4">
+                                            <div class="fw-bold fs-6 mb-3 text-dark">Detail Sesi Pertemuan</div>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-borderless table-striped align-middle gs-0 gy-2 mb-0">
+                                                    <thead>
+                                                        <tr class="text-start text-muted fw-bold fs-7 text-uppercase gs-0">
+                                                            <th>Sesi</th>
+                                                            <th>Topik</th>
+                                                            <th>Tanggal</th>
+                                                            <th>Kehadiran</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="text-gray-600 fw-semibold fs-7">
+                                                        @foreach($ub->serviceSessions as $session)
+                                                            <tr>
+                                                                <td class="ps-2">Sesi {{ $session->session_number }}</td>
+                                                                <td>{{ $session->topic ?: '-' }}</td>
+                                                                <td>{{ $session->scheduled_date ? \Carbon\Carbon::parse($session->scheduled_date)->format('d M Y H:i') : '-' }}</td>
+                                                                <td>
+                                                                    @if($session->status == 'attended')
+                                                                        <span class="badge badge-light-success py-1 px-2">Hadir</span>
+                                                                    @elseif($session->status == 'cancelled')
+                                                                        <span class="badge badge-light-danger py-1 px-2">Batal</span>
+                                                                    @else
+                                                                        <span class="badge badge-light-warning py-1 px-2">Pending</span>
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endif
                                 @empty
                                     <tr>
                                         <td colspan="4" class="text-center text-muted py-10">
@@ -94,6 +136,7 @@
                                         <td class="ps-4">
                                             <span
                                                 class="text-dark fw-bold d-block fs-6">{{ $b->service->name ?? 'Layanan' }}</span>
+                                            <span class="text-muted fs-7">ID: {{ $b->id }}</span>
                                         </td>
                                         <td>
                                             <span
@@ -113,9 +156,51 @@
                                                 if ($b->status == 'cancelled')
                                                     $badgeClass = 'badge-light-danger';
                                             @endphp
-                                            <span class="badge {{ $badgeClass }}">{{ ucfirst($b->status) }}</span>
+                                            <span class="badge {{ $badgeClass }} mb-2">{{ ucfirst($b->status) }}</span>
+                                            @if($b->status == 'scheduled' && $b->serviceSessions->count() > 0)
+                                                <button class="btn btn-sm btn-icon btn-light btn-active-light-primary w-30px h-30px" type="button" data-bs-toggle="collapse" data-bs-target="#sessions-b-{{ $b->id }}">
+                                                    <i class="fas fa-chevron-down"></i>
+                                                </button>
+                                            @endif
                                         </td>
                                     </tr>
+                                    @if($b->status == 'scheduled' && $b->serviceSessions->count() > 0)
+                                    <tr id="sessions-b-{{ $b->id }}" class="collapse bg-light-secondary">
+                                        <td colspan="4" class="px-6 py-4">
+                                            <div class="fw-bold fs-6 mb-3 text-dark">Riwayat Sesi Latihan</div>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-borderless table-striped align-middle gs-0 gy-2 mb-0">
+                                                    <thead>
+                                                        <tr class="text-start text-muted fw-bold fs-7 text-uppercase gs-0">
+                                                            <th>Sesi</th>
+                                                            <th>Topik</th>
+                                                            <th>Tanggal</th>
+                                                            <th>Kehadiran</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="text-gray-600 fw-semibold fs-7">
+                                                        @foreach($b->serviceSessions as $session)
+                                                            <tr>
+                                                                <td class="ps-2">Sesi {{ $session->session_number }}</td>
+                                                                <td>{{ $session->topic ?: '-' }}</td>
+                                                                <td>{{ $session->scheduled_date ? \Carbon\Carbon::parse($session->scheduled_date)->format('d M Y H:i') : '-' }}</td>
+                                                                <td>
+                                                                    @if($session->status == 'attended')
+                                                                        <span class="badge badge-light-success py-1 px-2">Hadir</span>
+                                                                    @elseif($session->status == 'cancelled')
+                                                                        <span class="badge badge-light-danger py-1 px-2">Batal</span>
+                                                                    @else
+                                                                        <span class="badge badge-light-warning py-1 px-2">Pending</span>
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endif
                                 @empty
                                     <tr>
                                         <td colspan="4" class="text-center text-muted py-10">

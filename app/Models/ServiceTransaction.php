@@ -54,6 +54,11 @@ class ServiceTransaction extends Model
         return $this->belongsTo(User::class, 'trainer_id');
     }
 
+    public function serviceSessions()
+    {
+        return $this->hasMany(ServiceSession::class);
+    }
+
     // Scopes
     public function scopePending($query)
     {

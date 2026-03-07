@@ -180,8 +180,20 @@
             const modal = new bootstrap.Modal('#serviceDetailModal');
             document.getElementById('modal-service-content').innerHTML = 'Loading...';
             modal.show();
-            fetch(`/services/${id}`)
-                .then(res => res.json())
+            fetch(`/services/${id}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(res => {
+                    if (!res.ok) {
+                        return res.text().then(text => {
+                            console.error('Server error:', text);
+                            throw new Error('Server returned error status ' + res.status);
+                        });
+                    }
+                    return res.json();
+                })
                 .then(data => {
                     if (data.success) {
                         document.getElementById('modal-service-name').textContent = data.service.name;
@@ -190,8 +202,9 @@
                         document.getElementById('modal-service-content').innerHTML = 'Gagal memuat detail.';
                     }
                 })
-                .catch(() => {
-                    document.getElementById('modal-service-content').innerHTML = 'Error sistem.';
+                .catch((err) => {
+                    console.error('Fetch error:', err);
+                    document.getElementById('modal-service-content').innerHTML = 'Error sistem: ' + err.message;
                 });
         }
 
@@ -203,7 +216,7 @@
         document.getElementById('booking-form').addEventListener('submit', function (e) {
             e.preventDefault();
             const formData = Object.fromEntries(new FormData(this).entries());
-            const url = `{{ route('services.book', ':id') }}`.replace(':id', formData.service_id);
+            const url = `{{ route('services.book', ':id', false) }}`.replace(':id', formData.service_id);
             console.log('Booking attempt to:', url);
 
             fetch(url, {
@@ -246,5 +259,57 @@
                     alert('Gagal menghubungi server: ' + error.message);
                 });
         });
+
+        function addSessionTemplate(serviceId) {
+            const tableBody = document.querySelector('#kt_table_templates tbody');
+            const rowCount = tableBody.querySelectorAll('tr:not(#empty-template-row)').length;
+            const nextNum = rowCount + 1;
+
+            fetch(`/services/${serviceId}/templates`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ session_number: nextNum, topic: '' })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        viewService(serviceId);
+                    }
+                });
+        }
+
+        function updateSessionTemplate(templateId, topic) {
+            fetch(`/services/templates/${templateId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ topic: topic })
+            });
+        }
+
+        function deleteSessionTemplate(templateId, btn, serviceId) {
+            if (!confirm('Hapus template sesi ini?')) return;
+
+            fetch(`/services/templates/${templateId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        viewService(serviceId);
+                    }
+                });
+        }
     </script>
 @endsection

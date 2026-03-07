@@ -29,8 +29,8 @@ class DashboardController extends Controller
             'upcoming_classes' => Schedule::where('trainer_id', $trainerId)
                 ->where('start_time', '>', now())
                 ->count(),
-            'upcoming_pt' => ServiceTransaction::where('trainer_id', $trainerId)
-                ->where('status', 'scheduled')
+            'upcoming_pt' => \App\Models\ServiceSession::where('trainer_id', $trainerId)
+                ->where('status', 'pending')
                 ->where('scheduled_date', '>', now())
                 ->count(),
             'total_students' => Booking::whereHas('schedule', fn($q) => $q->where('trainer_id', $trainerId))->count()
@@ -44,7 +44,8 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($s) {
                 return [
-                    'date' => $s->start_time->format('d M Y'),
+                    'date' => $s->start_time->format('Y-m-d'),
+                    'display_date' => $s->start_time->format('d M Y'),
                     'time' => $s->start_time->format('H:i'),
                     'type' => 'Class',
                     'name' => 'Latihan Bersama',
@@ -53,19 +54,19 @@ class DashboardController extends Controller
                 ];
             });
 
-        $upcomingPT = ServiceTransaction::with('user', 'service')
+        $upcomingPT = \App\Models\ServiceSession::with(['serviceTransaction.user', 'serviceTransaction.service'])
             ->where('trainer_id', $trainerId)
-            ->where('status', 'scheduled')
             ->where('scheduled_date', '>=', $today)
             ->get()
-            ->map(function ($st) {
+            ->map(function ($session) {
                 return [
-                    'date' => $st->scheduled_date->format('d M Y'),
-                    'time' => $st->scheduled_date->format('H:i'),
-                    'type' => 'Personal Training',
-                    'name' => $st->service->name ?? 'PT Session',
-                    'member' => $st->user->name ?? 'Unknown Member',
-                    'status' => 'Scheduled'
+                    'date' => $session->scheduled_date ? $session->scheduled_date->format('Y-m-d') : '-',
+                    'display_date' => $session->scheduled_date ? $session->scheduled_date->format('d M Y') : '-',
+                    'time' => $session->scheduled_date ? $session->scheduled_date->format('H:i') : '-',
+                    'type' => 'Service Session ' . $session->session_number,
+                    'name' => $session->topic ?: ($session->serviceTransaction->service->name ?? 'PT Session'),
+                    'member' => $session->serviceTransaction->user->name ?? 'Unknown Member',
+                    'status' => $session->status == 'pending' ? 'Scheduled' : 'Attended'
                 ];
             });
 

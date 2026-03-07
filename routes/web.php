@@ -185,6 +185,13 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/services/qr-scan', [ServiceController::class, 'qrScan'])->name('services.qr-scan');
     Route::post('/services/qr-process', [ServiceController::class, 'processQrService'])->name('services.qr-process');
 
+    // Service Template Routes
+    Route::middleware(['role:User:Staff|User:Owner'])->group(function () {
+        Route::post('/services/{service}/templates', [ServiceController::class, 'storeTemplate'])->name('services.templates.store');
+        Route::put('/services/templates/{template}', [ServiceController::class, 'updateTemplate'])->name('services.templates.update');
+        Route::delete('/services/templates/{template}', [ServiceController::class, 'deleteTemplate'])->name('services.templates.destroy');
+    });
+
     // Check-in Routes
     Route::get('/checkin', [CheckinController::class, 'index'])->name('checkin.index');
     Route::post('/checkin', [CheckinController::class, 'checkin'])->name('checkin.checkin');
@@ -233,6 +240,9 @@ Route::middleware('auth:web')->group(function () {
     Route::post('/service_transaction/{serviceTransaction}/cancel', [ServiceTransactionController::class, 'cancel'])->name('service_transaction.cancel');
     Route::post('/service_transaction/{serviceTransaction}/approve', [ServiceTransactionController::class, 'approve'])->name('service_transaction.approve');
     Route::post('/service_transaction/{serviceTransaction}/reject', [ServiceTransactionController::class, 'reject'])->name('service_transaction.reject');
+    Route::post('/service_transaction/{serviceTransaction}/sessions', [ServiceTransactionController::class, 'storeSession'])->name('service_transaction.sessions.store');
+    Route::put('/service_sessions/{serviceSession}', [ServiceTransactionController::class, 'updateSession'])->name('service_transaction.sessions.update');
+    Route::delete('/service_sessions/{serviceSession}', [ServiceTransactionController::class, 'deleteSession'])->name('service_transaction.sessions.destroy');
     Route::get('/landing_page', [LandingPageController::class, 'index'])->name('landing_page.index')->middleware(['can:landing_page']);
 
     // Public landing page route
@@ -364,10 +374,9 @@ Route::middleware('auth:web')->group(function () {
         // Member relations
         Route::get('/members', [\App\Http\Controllers\Trainer\TrainerController::class, 'members'])->name('members.index');
 
-        // Progress Latihan
+        // Progress & Sesi Latihan
         Route::get('/progress', [\App\Http\Controllers\Trainer\TrainerController::class, 'progressIndex'])->name('progress.index');
-        Route::get('/progress/create', [\App\Http\Controllers\Trainer\TrainerController::class, 'createProgress'])->name('progress.create');
-        Route::post('/progress', [\App\Http\Controllers\Trainer\TrainerController::class, 'storeProgress'])->name('progress.store');
+        Route::put('/progress/sessions/{session}', [\App\Http\Controllers\Trainer\TrainerController::class, 'updateSession'])->name('progress.session.update');
 
         // Ketersediaan Waktu
         Route::get('/availability', [\App\Http\Controllers\Trainer\TrainerController::class, 'availability'])->name('availability.index');

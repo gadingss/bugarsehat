@@ -31,56 +31,53 @@ class TrainerController extends Controller
     public function progressIndex(Request $request)
     {
         $config = [
-            'title' => 'Progress Latihan',
-            'title-alias' => 'Riwayat Progress Member',
+            'title' => 'Progress & Sesi Latihan',
+            'title-alias' => 'Manajemen Jadwal dan Progress Member',
             'menu' => MenuRepository::generate($request),
         ];
 
         $trainer = Auth::user();
-        $progresses = TrainingProgress::where('trainer_id', $trainer->id)
-            ->with('member')
-            ->orderBy('date', 'desc')
+
+        $transactions = \App\Models\ServiceTransaction::where('trainer_id', $trainer->id)
+            ->whereIn('status', ['scheduled', 'completed'])
+            ->with([
+                'user',
+                'service',
+                'serviceSessions' => function ($q) {
+                    $q->orderBy('session_number', 'asc');
+                }
+            ])
+            ->orderBy('scheduled_date', 'desc')
             ->get();
 
-        return view('trainer.progress.index', compact('config', 'progresses'));
+        return view('trainer.progress.index', compact('config', 'transactions'));
     }
 
-    // 🔹 Form Input Progress
-    public function createProgress(Request $request)
+    // 🔹 Update Session (Date, Topic, Status)
+    public function updateSession(Request $request, \App\Models\ServiceSession $session)
     {
-        $config = [
-            'title' => 'Input Progress',
-            'title-alias' => 'Catat Progress Member',
-            'menu' => MenuRepository::generate($request),
-        ];
-
         $trainer = Auth::user();
-        $members = $trainer->assignedMembers()->get();
 
-        return view('trainer.progress.create', compact('config', 'members'));
-    }
+        // Ensure the session belongs to a transaction assigned to this trainer
+        if ($session->serviceTransaction->trainer_id !== $trainer->id) {
+            abort(403, 'Akses ditolak.');
+        }
 
-    // 🔹 Input Progress
-    public function storeProgress(Request $request)
-    {
         $request->validate([
-            'member_id' => 'required|exists:users,id',
-            'date' => 'required|date',
-            'progress_note' => 'required',
-            'special_note' => 'nullable',
-            'recommendation' => 'nullable',
+            'scheduled_date' => 'required|date',
+            'topic' => 'nullable|string|max:255',
+            'status' => 'required|in:pending,attended,missed,cancelled',
         ]);
 
-        TrainingProgress::create([
-            'trainer_id' => Auth::id(),
-            'member_id' => $request->member_id,
-            'date' => $request->date,
-            'progress_note' => $request->progress_note,
-            'special_note' => $request->special_note,
-            'recommendation' => $request->recommendation,
+        // If checking in a member for the first time via this form, we can optionally link it to a CheckinLog
+        // But for simplicity, we just update the text fields
+        $session->update([
+            'scheduled_date' => $request->scheduled_date,
+            'topic' => $request->topic,
+            'status' => $request->status,
         ]);
 
-        return redirect()->route('trainer.progress.index')->with('success', 'Progress berhasil disimpan');
+        return redirect()->route('trainer.progress.index')->with('success', 'Sesi ke-' . $session->session_number . ' pada layanan ' . $session->serviceTransaction->service->name . ' berhasil diperbarui');
     }
 
     // 🔹 Ketersediaan Waktu

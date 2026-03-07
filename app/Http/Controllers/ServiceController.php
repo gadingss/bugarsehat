@@ -39,24 +39,77 @@ class ServiceController extends Controller
 
     public function show($id)
     {
-        $service = Service::active()->findOrFail($id);
-        $relatedServices = Service::active()
-            ->where('category', $service->category)
-            ->where('id', '!=', $service->id)
-            ->get();
+        try {
+            $service = Service::with('sessionTemplates')->findOrFail($id);
 
-        $trainers = \App\Models\User::role('User:Trainer')->get();
+            $relatedServices = Service::active()
+                ->where('category', $service->category)
+                ->where('id', '!=', $service->id)
+                ->get();
 
-        if (request()->ajax()) {
-            $html = view('services.partials.detail', compact('service', 'relatedServices', 'trainers'))->render();
-            return response()->json([
-                'success' => true,
-                'service' => $service,
-                'html' => $html
+            $trainers = \App\Models\User::role('User:Trainer')->get();
+
+            if (request()->expectsJson() || request()->ajax()) {
+                $html = view('services.partials.detail', compact('service', 'relatedServices', 'trainers'))->render();
+                return response()->json([
+                    'success' => true,
+                    'service' => $service,
+                    'html' => $html
+                ]);
+            }
+
+            return view('services.show', compact('service', 'relatedServices', 'trainers'));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Service Detail Error: ' . $e->getMessage(), [
+                'id' => $id,
+                'trace' => $e->getTraceAsString()
             ]);
-        }
 
-        return view('services.show', compact('service', 'relatedServices', 'trainers'));
+            if (request()->expectsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()->with('error', 'Gagal memuat detail layanan.');
+        }
+    }
+
+    public function storeTemplate(Request $request, $serviceId)
+    {
+        $request->validate([
+            'session_number' => 'required|integer',
+            'topic' => 'nullable|string|max:255',
+        ]);
+
+        \App\Models\ServiceSessionTemplate::create([
+            'service_id' => $serviceId,
+            'session_number' => $request->session_number,
+            'topic' => $request->topic,
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function updateTemplate(Request $request, $templateId)
+    {
+        $request->validate([
+            'topic' => 'nullable|string|max:255',
+        ]);
+
+        $template = \App\Models\ServiceSessionTemplate::findOrFail($templateId);
+        $template->update(['topic' => $request->topic]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function deleteTemplate($templateId)
+    {
+        $template = \App\Models\ServiceSessionTemplate::findOrFail($templateId);
+        $template->delete();
+
+        return response()->json(['success' => true]);
     }
 
     public function book(Request $request, $id)
@@ -245,14 +298,14 @@ class ServiceController extends Controller
         ];
 
         $bookings = ServiceTransaction::where('user_id', $user->id)
-            ->with('service')
+            ->with(['service', 'serviceSessions'])
             ->orderBy('transaction_date', 'desc')
             ->paginate(15);
 
         $upcomingBookings = ServiceTransaction::where('user_id', $user->id)
             ->where('status', 'scheduled')
             ->where('scheduled_date', '>', now())
-            ->with(['service', 'trainer'])
+            ->with(['service', 'trainer', 'serviceSessions'])
             ->orderBy('scheduled_date', 'asc')
             ->get();
 

@@ -389,7 +389,7 @@
             </div>
 
             <!-- Upcoming Services (Personal Training) -->
-            <div class="col-12 col-lg-4">
+            <div class="col-12 col-lg-6">
                 <div class="card h-lg-100">
                     <div class="card-header border-0 pt-5">
                         <h3 class="card-title align-items-start flex-column">
@@ -427,7 +427,7 @@
             </div>
 
             <!-- Upcoming Classes (Group Classes) -->
-            <div class="col-12 col-lg-4">
+            <div class="col-12 col-lg-6">
                 <div class="card h-lg-100">
                     <div class="card-header border-0 pt-5">
                         <h3 class="card-title align-items-start flex-column">
@@ -461,39 +461,6 @@
                 </div>
             </div>
 
-            <!-- Recent Progress -->
-            <div class="col-12 col-lg-4">
-                <div class="card h-lg-100">
-                    <div class="card-header border-0 pt-5">
-                        <h3 class="card-title align-items-start flex-column">
-                            <span class="card-label fw-bold fs-4 mb-1"><i class="fas fa-chart-line me-2 text-success"></i>Progress Terakhir</span>
-                            <span class="text-muted fw-semibold fs-7">Kemajuan latihan Anda</span>
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        @if($data['recentProgress']->count() > 0)
-                            @foreach($data['recentProgress'] as $prog)
-                            <div class="d-flex align-items-center mb-6">
-                                <div class="symbol symbol-45px me-4">
-                                    <span class="symbol-label bg-light-success text-success">
-                                        <i class="fas fa-walking fs-2"></i>
-                                    </span>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="fw-bold text-gray-800 fs-6">{{ Str::limit($prog->progress_note, 40) }}</div>
-                                    <div class="text-muted fs-7">{{ $prog->date->format('d M Y') }} - {{ $prog->trainer->name }}</div>
-                                </div>
-                            </div>
-                            @endforeach
-                            <a href="{{ route('member.progress.index') }}" class="btn btn-sm btn-light-success w-100">Lihat Semua Progress</a>
-                        @else
-                            <div class="text-center py-5">
-                                <span class="text-muted fs-7">Belum ada catatan progress</span>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
 
         </div>
 

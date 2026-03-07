@@ -9,11 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo; // <-- Tambahkan ini
 class Service extends Model
 {
     use HasFactory;
-    
+
     protected $table = 'additional_services';
     protected $primaryKey = 'id';
     public $timestamps = true;
-    
+
     protected $fillable = [
         'user_id', // <-- 1. TAMBAHKAN INI
         'name',
@@ -25,7 +25,8 @@ class Service extends Model
         'requires_booking',
         'max_participants',
         'image',
-        'status', // Tambahkan 'status' jika ada untuk approval (pending, approved)
+        'status',
+        'sessions_count',
     ];
 
     protected $casts = [
@@ -41,7 +42,7 @@ class Service extends Model
     // ==========================================================
     // Relationships
     // ==========================================================
-    
+
     /**
      * Relasi untuk mendapatkan user (member) yang memiliki layanan ini.
      */
@@ -52,7 +53,12 @@ class Service extends Model
 
     public function serviceTransactions()
     {
-        return $this->hasMany(ServiceTransaction::class);
+        return $this->hasMany(ServiceTransaction::class, 'service_id');
+    }
+
+    public function sessionTemplates()
+    {
+        return $this->hasMany(ServiceSessionTemplate::class, 'service_id')->orderBy('session_number');
     }
 
     // Scopes
@@ -81,7 +87,7 @@ class Service extends Model
     {
         $hours = floor($this->duration_minutes / 60);
         $minutes = $this->duration_minutes % 60;
-        
+
         if ($hours > 0 && $minutes > 0) {
             return $hours . ' jam ' . $minutes . ' menit';
         } elseif ($hours > 0) {
