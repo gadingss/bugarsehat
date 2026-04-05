@@ -4,12 +4,12 @@
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  
+
   <title>
     {{ config('app.name', 'Laravel') }}
     {{ config('app.title') ? ' [' . config('app.title') . ']' : '' }}
   </title>
-  
+
   <meta name="description" content="">
   <meta name="keywords" content="">
 
@@ -20,7 +20,9 @@
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com" rel="preconnect">
   <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+    rel="stylesheet">
 
   <!-- Vendor CSS Files -->
   <link href="{{ asset('sailor/assets/vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -40,37 +42,189 @@
   * License: https://bootstrapmade.com/license/
   ======================================================== -->
   <style>
-    .blue-text{
-        color: #00559e;
+    .blue-text {
+      color: #00559e;
     }
-    .yellow-text{
-        color: #fe851a;
+
+    .yellow-text {
+      color: #fe851a;
     }
-    .text-center{
+
+    .text-center {
       text-align: center;
     }
-    .text-left{
+
+    .text-left {
       text-align: left;
     }
+
     .header .logo img {
       max-height: 58px !important;
       border: 3px solid #00559e;
       border-radius: 50%;
     }
-    .bg-card>a{
+
+    .bg-card>a {
       color: white !important;
     }
-    .bg-card{
+
+    .bg-card {
       background: #00559e;
       color: white;
       border-radius: 20px 0px;
       padding: 4px;
     }
-    .description{
-      margin-bottom: 40px;
-    }
-    .description tr{
+
+    .description tr {
       vertical-align: initial;
+    }
+
+    /* Modern Membership Design */
+    #hero-membership {
+      padding: 80px 0;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+
+    .membership-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 24px;
+      padding: 40px 30px;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .membership-card:hover {
+      transform: translateY(-15px);
+      box-shadow: 0 20px 40px rgba(0, 85, 158, 0.15);
+      border-color: #00559e;
+    }
+
+    .membership-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 8px;
+      background: linear-gradient(90deg, #00559e, #fe851a);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .membership-card:hover::before {
+      opacity: 1;
+    }
+
+    .membership-icon {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+
+    .membership-card:hover .membership-icon {
+      transform: scale(1.2) rotate(5deg);
+    }
+
+    .membership-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #00559e;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .membership-price {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #333;
+      margin-bottom: 25px;
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+    }
+
+    .membership-price span {
+      font-size: 1rem;
+      color: #777;
+      margin-left: 5px;
+      font-weight: 500;
+    }
+
+    .membership-features {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 30px 0;
+      text-align: left;
+      flex-grow: 1;
+    }
+
+    .membership-features li {
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      color: #555;
+      display: flex;
+      align-items: center;
+      font-weight: 500;
+    }
+
+    .membership-features li:last-child {
+      border-bottom: none;
+    }
+
+    .membership-features li i {
+      color: #00559e;
+      margin-right: 12px;
+      font-size: 1.2rem;
+    }
+
+    .membership-badge {
+      position: absolute;
+      top: 20px;
+      right: -35px;
+      background: #fe851a;
+      color: white;
+      padding: 5px 40px;
+      transform: rotate(45deg);
+      font-size: 0.8rem;
+      font-weight: 700;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-membership {
+      background: #00559e;
+      color: white;
+      border-radius: 50px;
+      padding: 15px 30px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(0, 85, 158, 0.3);
+    }
+
+    .btn-membership:hover {
+      background: #fe851a;
+      color: white;
+      transform: scale(1.05);
+      box-shadow: 0 8px 20px rgba(254, 133, 26, 0.4);
+    }
+
+    .section-title span {
+      font-size: 1.1rem;
+      color: #666;
+      max-width: 600px;
+      margin: 10px auto;
+      display: block;
     }
   </style>
 </head>
@@ -80,22 +234,23 @@
   <header id="header" class="header d-flex align-items-center sticky-top">
     <div class="container-fluid container-xl position-relative d-flex align-items-center">
 
-    <a href="{{ Route::has('landing_preview') ? route('landing_preview') : url('/') }}" class="logo d-flex align-items-center me-auto">
-    <img src="{{ asset('metronic/assets/media/misc/logo-only.png') }}" alt="">
-    <h1 class="sitename"><b><span class="blue-text">Bugar</span><span class="yellow-text">Sehat</span></b></h1>
-</a>
+      <a href="{{ Route::has('landing_preview') ? route('landing_preview') : url('/') }}"
+        class="logo d-flex align-items-center me-auto">
+        <img src="{{ asset('metronic/assets/media/misc/logo-only.png') }}" alt="">
+        <h1 class="sitename"><b><span class="blue-text">Bugar</span><span class="yellow-text">Sehat</span></b></h1>
+      </a>
 
       <nav id="navmenu" class="navmenu">
         <ul>
-          <li><a href="#hero-home" class="active goto-hero">Home</a></li>
+          <li><a href="#hero-home" class="active goto-hero">Beranda</a></li>
           <li><a href="#hero-membership" class="goto-hero">Membership</a></li>
           <li><a href="#hero-product-services" class="goto-hero">Produk & Layanan</a></li>
-          <li><a href="#hero-contact" class="goto-hero">Contact</a></li>
+          <li><a href="#footer" class="goto-hero">Kontak</a></li>
         </ul>
         <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
       </nav>
 
-      <a class="btn-getstarted" href="{{route('login')}}">Sign In</a>
+      <a class="btn-getstarted" href="{{route('login')}}">Masuk</a>
 
     </div>
   </header>
@@ -107,7 +262,7 @@
 
       <div id="hero-carousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="5000">
         @php
-          $class="active";
+          $class = "active";
         @endphp
         @foreach($data['slide'] as $slides)
           <div class="carousel-item {{$class}}">
@@ -118,10 +273,10 @@
             </div>
           </div><!-- End Carousel Item -->
           @php
-            $class="";
+            $class = "";
           @endphp
         @endforeach
-        
+
         <a class="carousel-control-prev" href="#hero-carousel" role="button" data-bs-slide="prev">
           <span class="carousel-control-prev-icon bi bi-chevron-left" aria-hidden="true"></span>
         </a>
@@ -135,180 +290,148 @@
       </div>
 
     </section><!-- /Hero Section -->
-    
+
     <section id="hero-membership" class="services section text-center">
       <!-- Section Title -->
       <div class="container section-title" data-aos="fade-up">
-        <p>💪 Flexible Gym & Yoga Membership Plans<br></p>
-        <span>Choose the plan that fits your lifestyle and fitness goals</span>
+        <p>💪 Pilihan Paket Membership Gym & Yoga<br></p>
+        <span>Pilih paket yang sesuai dengan gaya hidup dan tujuan kebugaran Anda</span>
       </div><!-- End Section Title -->
       <div class="container">
 
         <div class="row gy-4">
           @php
-            $aos=100;
+            $aos = 100;
           @endphp
           @foreach($data['membership_packet'] as $membership_packet)
-            <div class="col-md-3" data-aos="fade-up" data-aos-delay="{{$aos}}">
-              <div class="service-item d-flex position-relative h-100 p-3">
-                <!-- <i class="bi bi-briefcase icon flex-shrink-0"></i> -->
-                <div>
-                  <h4 class="title mb-2"><a href="{{route('login')}}" class="stretched-link">👍 {{$membership_packet['name']}} Plan</a></h4>
-                  <div class="mb-2 bg-card">{{$membership_packet['name_label']}}</div>
-                  <div class="description">
-                    <table class="text-left">
-                      <tbody>
-                        <tr>
-                          <td style="width:100px">💰 Price</td>
-                          <td>:</td>
-                          <td>Rp. {{$membership_packet['price']}},00</td>
-                        </tr>
-                        <tr>
-                          <td>⏱️ Duration</td>
-                          <td>:</td>
-                          <td>{{$membership_packet['duration_days']}} Days</td>
-                        </tr>
-                        <tr>
-                          <td>🚪 Max Visits</td>
-                          <td>:</td>
-                          <td>{{$membership_packet['max_visits']}}</td>
-                        </tr>
-                        <tr>
-                          <td>📝 Desc</td>
-                          <td>:</td>
-                          <td>{{$membership_packet['description']}}</td>
-                        </tr>
-                        <tr>
-                          <td>✅ Ideal for</td>
-                          <td>:</td>
-                          <td>{{$membership_packet['usage']}}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                   <!-- <a href="{{route('login')}}" class="read-more btn"><span>Read More</span><i class="bi bi-arrow-right"></i></a> -->
+            <div class="col-lg-3 col-md-6" data-aos="fade-up" data-aos-delay="{{$aos}}">
+              <div class="membership-card">
+                @if(str_contains(strtolower($membership_packet['name']), 'premium') || str_contains(strtolower($membership_packet['name']), 'gold'))
+                  <div class="membership-badge">Popular</div>
+                @endif
+
+                <div class="membership-icon">
+                  @if(str_contains(strtolower($membership_packet['name']), 'basic'))
+                    <i class="bi bi-lightning"></i>
+                  @elseif(str_contains(strtolower($membership_packet['name']), 'silver'))
+                    <i class="bi bi-shield-shaded"></i>
+                  @elseif(str_contains(strtolower($membership_packet['name']), 'gold'))
+                    <i class="bi bi-trophy"></i>
+                  @else
+                    <i class="bi bi-gem"></i>
+                  @endif
                 </div>
+
+                <h3 class="membership-title">{{$membership_packet['name']}}</h3>
+
+                <div class="membership-price">
+                  Rp {{ (int)$membership_packet['price'] }}K
+                  <span>/ {{ $membership_packet['duration_days'] }} hari</span>
+                </div>
+
+                <ul class="membership-features">
+                  <li><i class="bi bi-check2-circle"></i> {{ $membership_packet['max_visits'] }} Kunjungan Maksimal</li>
+                  <li><i class="bi bi-check2-circle"></i> Durasi {{ $membership_packet['duration_days'] }} Hari</li>
+                  <li><i class="bi bi-check2-circle"></i> {{ $membership_packet['usage'] }}</li>
+                  @if($membership_packet['description'])
+                    <li><i class="bi bi-info-circle"></i> {{ Str::limit($membership_packet['description'], 50) }}</li>
+                  @endif
+                </ul>
+
+                <a href="{{route('login')}}" class="btn btn-membership w-100">Pilih Paket</a>
               </div>
-            </div><!-- End Service Item -->
+            </div><!-- End Membership Card -->
             @php
-              $aos=$aos+100;
+              $aos = $aos + 100;
             @endphp
           @endforeach
-          
+
         </div>
 
       </div>
 
     </section><!-- /Services Section -->
 
-    <!-- About Section -->
-    <section id="hero-product-services" class="about section text-center">
+    <!-- Products & Services Section -->
+    <section id="hero-product-services" class="services section">
 
       <!-- Section Title -->
-      <div class="container section-title" data-aos="fade-up">
-        <p>Our Products & Services<br></p>
-        <span>Everything you need for your fitness journey</span>
+      <div class="container section-title text-center" data-aos="fade-up">
+        <p>Produk & Layanan Kami<br></p>
+        <span>Temukan produk premium dan layanan profesional kami untuk mendukung kebugaran Anda.</span>
       </div><!-- End Section Title -->
 
       <div class="container">
 
+        <!-- Products Subheading -->
+        <h3 class="mb-4 text-center" data-aos="fade-up">Produk Unggulan</h3>
+        <div class="row gy-4 mb-5">
+          @foreach($data['products'] as $product)
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+              <div class="card h-100 shadow-sm border-0">
+                @if($product->image)
+                  <img src="{{ asset('storage/' . $product->image) }}" class="card-img-top" alt="{{ $product->name }}"
+                    style="height: 200px; object-fit: cover;"
+                    onerror="this.onerror=null;this.src='{{ asset('metronic/assets/media/stock/600x400/img-26.jpg') }}';">
+                @else
+                  <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                    style="height: 200px;">
+                    <i class="bi bi-box-seam text-muted" style="font-size: 4rem;"></i>
+                  </div>
+                @endif
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title fw-bold">
+                    <a href="{{ route('login') }}"
+                      class="text-dark text-decoration-none stretched-link">{{ $product->name }}</a>
+                  </h5>
+                  <p class="card-text text-muted mb-4">{{ Str::limit($product->description, 100) }}</p>
+                  <div class="mt-auto d-flex justify-content-between align-items-center">
+                    <span class="fs-5 fw-bold" style="color: var(--accent-color);">Rp
+                      {{ number_format($product->getCurrentPrice(), 0, ',', '.') }}</span>
+                    <span class="badge bg-light text-dark border">{{ $product->category ?? 'Produk' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          @endforeach
+        </div>
+
+        <!-- Services Subheading -->
+        <h3 class="mb-4 text-center mt-5" data-aos="fade-up">Layanan Profesional</h3>
         <div class="row gy-4">
-
-          <div class="col-lg-6 content" data-aos="fade-up" data-aos-delay="100">
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
-              magna aliqua.
-            </p>
-            <ul>
-              <li><i class="bi bi-check2-circle"></i> <span>Ullamco laboris nisi ut aliquip ex ea commodo consequat.</span></li>
-              <li><i class="bi bi-check2-circle"></i> <span>Duis aute irure dolor in reprehenderit in voluptate velit.</span></li>
-              <li><i class="bi bi-check2-circle"></i> <span>Ullamco laboris nisi ut aliquip ex ea commodo</span></li>
-            </ul>
-          </div>
-
-          <div class="col-lg-6" data-aos="fade-up" data-aos-delay="200">
-            <p>Ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. </p>
-            <a href="about.html" class="read-more"><span>Read More</span><i class="bi bi-arrow-right"></i></a>
-          </div>
-
+          @foreach($data['services'] as $service)
+            <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+              <div class="card h-100 shadow-sm border-0">
+                @if($service->image)
+                  <img src="{{ asset('storage/' . $service->image) }}" class="card-img-top" alt="{{ $service->name }}"
+                    style="height: 200px; object-fit: cover;"
+                    onerror="this.onerror=null;this.src='{{ asset('metronic/assets/media/stock/600x400/img-1.jpg') }}';">
+                @else
+                  <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                    style="height: 200px;">
+                    <i class="bi bi-person-badge text-muted" style="font-size: 4rem;"></i>
+                  </div>
+                @endif
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title fw-bold">
+                    <a href="{{ route('login') }}"
+                      class="text-dark text-decoration-none stretched-link">{{ $service->name }}</a>
+                  </h5>
+                  <p class="card-text text-muted mb-4">{{ Str::limit($service->description, 100) }}</p>
+                  <div class="mt-auto d-flex justify-content-between align-items-center">
+                    <span class="fs-5 fw-bold" style="color: var(--accent-color);">Rp
+                      {{ number_format($service->price, 0, ',', '.') }}</span>
+                    <span class="text-muted small">/ sesi</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          @endforeach
         </div>
 
       </div>
 
-    </section><!-- /About Section -->
-    
-    <!-- Services Section -->
-    <section id="hero-contact" class="services section">
-
-      <div class="container">
-
-        <div class="row gy-4">
-
-          <div class="col-md-6" data-aos="fade-up" data-aos-delay="100">
-            <div class="service-item d-flex position-relative h-100">
-              <i class="bi bi-briefcase icon flex-shrink-0"></i>
-              <div>
-                <h4 class="title"><a href="#" class="stretched-link">Lorem Ipsum</a></h4>
-                <p class="description">Voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident</p>
-              </div>
-            </div>
-          </div><!-- End Service Item -->
-
-          <div class="col-md-6" data-aos="fade-up" data-aos-delay="200">
-            <div class="service-item d-flex position-relative h-100">
-              <i class="bi bi-card-checklist icon flex-shrink-0"></i>
-              <div>
-                <h4 class="title"><a href="#" class="stretched-link">Dolor Sitema</a></h4>
-                <p class="description">Minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat tarad limino ata</p>
-              </div>
-            </div>
-          </div><!-- End Service Item -->
-
-          <div class="col-md-6" data-aos="fade-up" data-aos-delay="300">
-            <div class="service-item d-flex position-relative h-100">
-              <i class="bi bi-bar-chart icon flex-shrink-0"></i>
-              <div>
-                <h4 class="title"><a href="#" class="stretched-link">Sed ut perspiciatis</a></h4>
-                <p class="description">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur</p>
-              </div>
-            </div>
-          </div><!-- End Service Item -->
-
-          <div class="col-md-6" data-aos="fade-up" data-aos-delay="400">
-            <div class="service-item d-flex position-relative h-100">
-              <i class="bi bi-binoculars icon flex-shrink-0"></i>
-              <div>
-                <h4 class="title"><a href="#" class="stretched-link">Magni Dolores</a></h4>
-                <p class="description">Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>
-              </div>
-            </div>
-          </div><!-- End Service Item -->
-
-          <div class="col-md-6" data-aos="fade-up" data-aos-delay="500">
-            <div class="service-item d-flex position-relative h-100">
-              <i class="bi bi-brightness-high icon flex-shrink-0"></i>
-              <div>
-                <h4 class="title"><a href="#" class="stretched-link">Nemo Enim</a></h4>
-                <p class="description">At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque</p>
-              </div>
-            </div>
-          </div><!-- End Service Item -->
-
-          <div class="col-md-6" data-aos="fade-up" data-aos-delay="600">
-            <div class="service-item d-flex position-relative h-100">
-              <i class="bi bi-calendar4-week icon flex-shrink-0"></i>
-              <div>
-                <h4 class="title"><a href="#" class="stretched-link">Eiusmod Tempor</a></h4>
-                <p class="description">Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi</p>
-              </div>
-            </div>
-          </div><!-- End Service Item -->
-
-        </div>
-
-      </div>
-
-    </section><!-- /Services Section -->
+    </section><!-- /Products & Services Section -->
 
   </main>
 
@@ -321,9 +444,9 @@
             <span class="sitename">{{ config('app.name', 'Laravel') }}</span>
           </a>
           <div class="footer-contact pt-3">
-            <p>Lorem ipsum dolor sit.</p>
-            <p>Lorem ipsum dolor sit, amet consectetur adipisicing.</p>
-            <p class="mt-3"><strong>Phone:</strong> <span>+62 7777 77777 77</span></p>
+            <p>Hubungi kami untuk informasi lebih lanjut.</p>
+            <p>Kami siap membantu perjalanan kebugaran Anda.</p>
+            <p class="mt-3"><strong>Telepon:</strong> <span>+62 7777 77777 77</span></p>
             <p><strong>Email:</strong> <span>bugarsehat@gmail.com</span></p>
           </div>
           <div class="social-links d-flex mt-4">
@@ -335,13 +458,13 @@
         </div>
 
         <div class="col-lg-6 col-md-12 footer-newsletter">
-          <h4>Our Newsletter</h4>
-          <p>Subscribe to our newsletter and receive the latest news about our products and services!</p>
+          <h4>Buletin Kami</h4>
+          <p>Berlangganan buletin kami untuk menerima berita terbaru tentang produk dan layanan khusus kami!</p>
           <form action="{{route('landing_preview')}}" method="post" class="php-email-form">
-            <div class="newsletter-form"><input type="email" name="email"><input type="submit" value="Subscribe"></div>
-            <div class="loading">Loading</div>
+            <div class="newsletter-form"><input type="email" name="email"><input type="submit" value="Langganan"></div>
+            <div class="loading">Memuat</div>
             <div class="error-message"></div>
-            <div class="sent-message">Your subscription request has been sent. Thank you!</div>
+            <div class="sent-message">Permintaan berlangganan Anda telah terkirim. Terima kasih!</div>
           </form>
         </div>
 
@@ -355,14 +478,16 @@
         <!-- You can delete the links only if you've purchased the pro version. -->
         <!-- Licensing information: https://bootstrapmade.com/license/ -->
         <!-- Purchase the pro version with working PHP/AJAX contact form: [buy-url] -->
-        Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a> Distributed by <a href=“https://themewagon.com>ThemeWagon
+        Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a> Distributed by <a
+          href="https://themewagon.com/">ThemeWagon</a>
       </div>
     </div>
 
   </footer>
 
   <!-- Scroll Top -->
-  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i
+      class="bi bi-arrow-up-short"></i></a>
 
   <!-- Preloader -->
   <div id="preloader"></div>
@@ -387,7 +512,17 @@
         const href = e.currentTarget.getAttribute('href');
         document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
       })
-    })
+    });
+
+    const myCarouselElement = document.querySelector('#hero-carousel');
+    if (myCarouselElement) {
+      const carousel = new bootstrap.Carousel(myCarouselElement, {
+        interval: 5000,
+        ride: 'carousel',
+        pause: false
+      });
+      carousel.cycle();
+    }
   </script>
 
 </body>

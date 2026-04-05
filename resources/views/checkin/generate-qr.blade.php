@@ -67,11 +67,11 @@
             <div class="text-gray-600 fs-6">
                 <p class="mb-2">
                     <i class="fas fa-info-circle text-primary me-2"></i>
-                    Kode ini hanya berlaku untuk 1 menit dan 1 kali check-in.
+                    Tunjukkan kode QR ini kepada staff di pintu masuk ("front desk") untuk melakukan check-in.
                 </p>
                 <p>
-                    <i class="fas fa-sync text-primary me-2"></i>
-                    Halaman akan refresh otomatis untuk membuat kode baru.
+                    <i class="fas fa-shield-alt text-primary me-2"></i>
+                    Kode ini bersifat unik untuk akun Anda dan dapat digunakan seterusnya selama status membership Anda aktif.
                 </p>
             </div>
         </div>
@@ -100,11 +100,6 @@
 
 @push('scripts')
 <script>
-    // Auto-refresh QR code every 60 seconds for security
-    const refreshInterval = setInterval(() => {
-        location.reload();
-    }, 60000); // 60 detik
-
     // Download QR Code functionality
     function downloadQR() {
         const qrCodeContainer = document.getElementById('qr-code-container');
@@ -137,10 +132,5 @@
 
         img.src = 'data:image/svg+xml;base64,' + window.btoa(svgString);
     }
-
-    // Stop refresh when leaving the page
-    window.addEventListener('beforeunload', function(e) {
-        clearInterval(refreshInterval);
-    });
 </script>
 @endpush

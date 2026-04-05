@@ -335,10 +335,10 @@
                 return;
             }
 
-            if (rawInput.length !== 8) {
+            if (rawInput.length < 3 || rawInput.length > 20) {
                 Swal.fire({
                     title: 'Error!',
-                    text: 'Format kode manual harus 8 karakter',
+                    text: 'Format kode manual tidak valid',
                     icon: 'error'
                 });
                 return;

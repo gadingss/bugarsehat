@@ -48,20 +48,22 @@
                 <div class="col-12 col-md-6 col-lg-4 service-item" data-category="{{ $service->category }}"
                     data-booking="{{ $service->requires_booking ? '1' : '0' }}" data-name="{{ strtolower($service->name) }}">
                     <div class="card card-flush h-100">
-                        <div class="card-header p-0">
-                            <div class="position-relative"
-                                style="background-image: url('{{ $service->image ?? asset('metronic/assets/media/stock/600x400/img-2.jpg') }}'); background-size: cover; background-position: center; height: 200px;">
-                                @if($service->price == 0)
-                                    <div class="position-absolute top-0 end-0 m-3">
-                                        <span class="badge badge-success fs-7">GRATIS</span>
-                                    </div>
-                                @endif
-                                @if($service->requires_booking)
-                                    <div class="position-absolute top-0 start-0 m-3">
-                                        <span class="badge badge-warning fs-7">Perlu Booking</span>
-                                    </div>
-                                @endif
-                            </div>
+                        <div class="position-relative overflow-hidden rounded-top" style="height: 200px;">
+                            <img src="{{ $service->image ? asset('storage/' . $service->image) : asset('metronic/assets/media/stock/600x400/img-2.jpg') }}"
+                                 alt="{{ $service->name }}"
+                                 class="w-100 h-100"
+                                 style="object-fit: cover;"
+                                 onerror="this.src='{{ asset('metronic/assets/media/stock/600x400/img-2.jpg') }}'">
+                            @if($service->price == 0)
+                                <div class="position-absolute top-0 end-0 m-3">
+                                    <span class="badge badge-success fs-7">GRATIS</span>
+                                </div>
+                            @endif
+                            @if($service->requires_booking)
+                                <div class="position-absolute top-0 start-0 m-3">
+                                    <span class="badge badge-warning fs-7">Perlu Booking</span>
+                                </div>
+                            @endif
                         </div>
                         <div class="card-body d-flex flex-column">
                             <div class="flex-grow-1">
@@ -310,6 +312,16 @@
                         viewService(serviceId);
                     }
                 });
+        }
+        function previewServiceImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('service-new-img').src = e.target.result;
+                    document.getElementById('service-image-preview-new').classList.remove('d-none');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
         }
     </script>
 @endsection

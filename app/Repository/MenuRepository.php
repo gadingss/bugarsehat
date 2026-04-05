@@ -44,6 +44,16 @@ class MenuRepository
                 $routeName = $item['url'];
                 $result[$key]['permission'] = $routeName;
 
+                // FIX: Map URL 'pengguna.index' to permission 'pengguna' because Spatie only has 'pengguna'
+                if ($routeName === 'pengguna.index') {
+                    $result[$key]['permission'] = 'pengguna';
+                }
+
+                if ($routeName === 'member.schedule.index') {
+                    $result[$key]['permission'] = 'member.schedule.view';
+                }
+
+
                 try {
                     if (Route::has($routeName)) {
                         $generatedRoute = route($routeName);

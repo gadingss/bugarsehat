@@ -94,18 +94,7 @@
                 Pengajuan Baru
             </a>
         </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link {{ $activeTab == 'product' ? 'active' : '' }}" 
-               href="{{ route('activation_order', ['tab' => 'product']) }}">
-                Produk
-            </a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link {{ $activeTab == 'service' ? 'active' : '' }}" 
-               href="{{ route('activation_order',['tab' => 'service']) }}">
-                Layanan
-            </a>
-        </li>
+
     </ul>
 
     @if(session('success'))
@@ -243,128 +232,7 @@
         </table>
     </div>
     {{ $memberships->withQueryString()->links() }}
-
-    {{-- =================================================================== --}}
-    {{-- KONTEN UNTUK TAB PRODUK                                           --}}
-    {{-- =================================================================== --}}
-    @elseif($activeTab == 'product')
-    <div class="table-responsive">
-        <p>Tabel ini menampilkan daftar pengajuan produk oleh member untuk disetujui.</p>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Nama Member</th>
-                    <th>Nama Produk</th>
-                    <th>Harga</th>
-                    <th>Tanggal Pengajuan</th>
-                    <th>Status</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($products as $product)
-                <tr>
-                    <td>{{ $product->user->name ?? 'N/A' }}</td>
-                    <td>{{ $product->name }}</td>
-                    <td>Rp {{ number_format($product->price, 0, ',', '.') }}</td>
-                    <td>{{ $product->created_at->format('d M Y') }}</td>
-                    <td>
-                        @if($product->status == 'approved') <span class="badge bg-success">Disetujui</span>
-                        @elseif($product->status == 'rejected') <span class="badge bg-danger">Ditolak</span>
-                        @else <span class="badge bg-warning">Pending</span>
-                        @endif
-                    </td>
-                    <td>
-                        <div class="btn-group-actions">
-                            @if($product->status == 'pending')
-                            <form action="{{ route('product.approve', $product->id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Setujui pengajuan ini?')" title="Setujui"><i class="fas fa-check"></i></button>
-                            </form>
-                            <form action="{{ route('product.reject', $product->id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn btn-sm btn-secondary" onclick="return confirm('Tolak pengajuan ini?')" title="Tolak"><i class="fas fa-thumbs-down"></i></button>
-                            </form>
-                            @endif
-                            <a href="{{ route('product.edit', $product->id) }}" class="btn btn-sm btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
-                            <form action="{{ route('product.destroy', $product->id) }}" method="POST">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus ini?')" title="Hapus"><i class="fas fa-trash"></i></button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="6" class="text-center">Tidak ada data produk yang memerlukan persetujuan.</td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-    {{ $products->withQueryString()->links() }}
-
-    {{-- =================================================================== --}}
-    {{-- KONTEN UNTUK TAB LAYANAN                                          --}}
-    {{-- =================================================================== --}}
-    @elseif($activeTab == 'service')
-    <div class="table-responsive">
-        <p>Tabel ini menampilkan daftar pengajuan layanan oleh member untuk disetujui.</p>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Nama Member</th>
-                    <th>Nama Layanan</th>
-                    <th>Harga</th>
-                    <th>Tanggal Pengajuan</th>
-                    <th>Status</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($services as $service)
-                <tr>
-                    <td>{{ $service->user->name ?? 'N/A' }}</td>
-                    <td>{{ $service->name }}</td>
-                    <td>Rp {{ number_format($service->price, 0, ',', '.') }}</td>
-                    <td>{{ $service->created_at->format('d M Y') }}</td>
-                    <td>
-                        @if($service->status == 'approved') <span class="badge bg-success">Disetujui</span>
-                        @elseif($service->status == 'rejected') <span class="badge bg-danger">Ditolak</span>
-                        @else <span class="badge bg-warning">Pending</span>
-                        @endif
-                    </td>
-                    <td>
-                        <div class="btn-group-actions">
-                             @if($service->status == 'pending')
-                            <form action="{{ route('service.approve', $service->id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Setujui pengajuan ini?')" title="Setujui"><i class="fas fa-check"></i></button>
-                            </form>
-                            <form action="{{ route('service.reject', $service->id) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="btn btn-sm btn-secondary" onclick="return confirm('Tolak pengajuan ini?')" title="Tolak"><i class="fas fa-thumbs-down"></i></button>
-                            </form>
-                            @endif
-                            <a href="{{ route('service.edit', $service->id) }}" class="btn btn-sm btn-warning" title="Edit"><i class="fas fa-edit"></i></a>
-                            <form action="{{ route('service.destroy', $service->id) }}" method="POST">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus ini?')" title="Hapus"><i class="fas fa-trash"></i></button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="6" class="text-center">Tidak ada data layanan yang memerlukan persetujuan.</td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-    {{ $services->withQueryString()->links() }}
     @endif
+
 </div>
 @endsection

@@ -55,3 +55,22 @@
         </div>
     </div>
 @endsection
+
+@section('script')
+    <script>
+        function previewServiceImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('service-new-img').src = e.target.result;
+                    document.getElementById('service-image-preview-new').classList.remove('d-none');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        @if(session('success'))
+            Swal.fire({ icon: 'success', title: 'Berhasil!', text: '{{ session('success') }}', timer: 2500, showConfirmButton: false });
+        @endif
+    </script>
+@endsection

@@ -148,6 +148,9 @@ Route::middleware('auth:web')->group(function () {
         Route::get('/business-analytics/forecast', [\App\Http\Controllers\Owner\BusinessAnalyticsController::class, 'financialForecast'])->name('business-analytics.forecast');
         Route::post('/business-analytics/export', [\App\Http\Controllers\Owner\BusinessAnalyticsController::class, 'exportReport'])->name('business-analytics.export');
 
+        // Trainer Salary
+        Route::get('/trainer-salary', [\App\Http\Controllers\Owner\TrainerSalaryController::class, 'index'])->name('trainer-salary.index');
+
         // --- Owner Member Management (FIXED & MOVED HERE) ---
         Route::prefix('members')->name('member.')->group(function () {
             Route::get('/', [PenggunaController::class, 'daftarMember'])->name('index');
@@ -190,6 +193,9 @@ Route::middleware('auth:web')->group(function () {
         Route::post('/services/{service}/templates', [ServiceController::class, 'storeTemplate'])->name('services.templates.store');
         Route::put('/services/templates/{template}', [ServiceController::class, 'updateTemplate'])->name('services.templates.update');
         Route::delete('/services/templates/{template}', [ServiceController::class, 'deleteTemplate'])->name('services.templates.destroy');
+        // Image upload routes
+        Route::post('/products/{id}/update-image', [ProductController::class, 'updateImage'])->name('products.update-image');
+        Route::post('/services/{id}/update-image', [ServiceController::class, 'updateImage'])->name('services.update-image');
     });
 
     // Check-in Routes
@@ -231,8 +237,17 @@ Route::middleware('auth:web')->group(function () {
     Route::delete('/activation_order/{id}', [ActivationOrderController::class, 'destroy'])->name('activation_order.destroy')->middleware(['can:activation_order']);
     Route::post('/activation_order/{id}/approve', [ActivationOrderController::class, 'approve'])->name('activation_order.approve')->middleware(['can:activation_order']);
     Route::post('/activation_order/{id}/reject', [ActivationOrderController::class, 'reject'])->name('activation_order.reject')->middleware(['can:activation_order']);
-    Route::get('/product', [ProductController::class, 'index'])->name('product')->middleware(['can:product']);
-    Route::get('/service', [ServiceController::class, 'index'])->name('service')->middleware(['can:service']);
+    // Manage Products (CRUD for Owner/Staff)
+    Route::get('/product', [ProductController::class, 'manage'])->name('product')->middleware(['can:product']);
+    Route::post('/product', [ProductController::class, 'store'])->name('product.store')->middleware(['can:product']);
+    Route::put('/product/{id}', [ProductController::class, 'update'])->name('product.update')->middleware(['can:product']);
+    Route::delete('/product/{id}', [ProductController::class, 'destroy'])->name('product.destroy')->middleware(['can:product']);
+
+    // Manage Services (CRUD for Owner/Staff)
+    Route::get('/service', [ServiceController::class, 'manage'])->name('service')->middleware(['can:service']);
+    Route::post('/service', [ServiceController::class, 'store'])->name('service.store')->middleware(['can:service']);
+    Route::put('/service/{id}', [ServiceController::class, 'update'])->name('service.update')->middleware(['can:service']);
+    Route::delete('/service/{id}', [ServiceController::class, 'destroy'])->name('service.destroy')->middleware(['can:service']);
     Route::get('/product_transaction', [ProductTransactionController::class, 'index'])->name('product_transaction')->middleware(['can:product_transaction']);
     Route::get('/member_transaction', [MemberTransactionController::class, 'index'])->name('member_transaction')->middleware(['can:member_transaction']);
     Route::get('/service_transaction', [ServiceTransactionController::class, 'index'])->name('service_transaction')->middleware(['can:service_transaction']);
@@ -347,23 +362,7 @@ Route::middleware('auth:web')->group(function () {
     // ✅ INI ADALAH ROUTE YANG MEMPERBAIKI ERROR ANDA
     Route::get('/transactions/history', [MemberTransactionController::class, 'index'])->name('transaction.history')->middleware(['can:member_transaction']);
 
-    Route::middleware(['auth'])->prefix('products')->name('product.')->group(function () {
-        Route::post('/{product}/approve', [ActivationOrderController::class, 'approveProduct'])->name('approve');
-        Route::post('/{product}/reject', [ActivationOrderController::class, 'rejectProduct'])->name('reject');
-        Route::get('/{product}/edit', [ActivationOrderController::class, 'editProduct'])->name('edit');
-        Route::delete('/{product}/destroy', [ActivationOrderController::class, 'destroyProduct'])->name('destroy');
-        // Pastikan juga rute untuk update ada jika diperlukan
-        Route::put('/{product}/update', [ActivationOrderController::class, 'updateProduct'])->name('update');
-    });
 
-    // Grup route untuk aksi pada pengajuan Layanan
-    Route::middleware(['auth'])->prefix('services')->name('service.')->group(function () {
-        Route::post('/{service}/approve', [ActivationOrderController::class, 'approveService'])->name('approve');
-        Route::post('/{service}/reject', [ActivationOrderController::class, 'rejectService'])->name('reject');
-        Route::get('/{service}/edit', [ActivationOrderController::class, 'editService'])->name('edit');
-        Route::put('/{service}/update', [ActivationOrderController::class, 'updateService'])->name('update');
-        Route::delete('/{service}/destroy', [ActivationOrderController::class, 'destroyService'])->name('destroy');
-    });
 
     // --- Trainer Routes ---
     // Mengelola jadwal latihan/kelas

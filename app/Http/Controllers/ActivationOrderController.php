@@ -36,8 +36,6 @@ class ActivationOrderController extends Controller
             'config' => $config,
             'activeTab' => $activeTab,
             'memberships' => new LengthAwarePaginator([], 0, 15), // Default Paginator kosong
-            'products' => new LengthAwarePaginator([], 0, 15),
-            'services' => new LengthAwarePaginator([], 0, 15),
         ];
 
         if (in_array($activeTab, ['activation', 'extension', 'application'])) {
@@ -66,34 +64,6 @@ class ActivationOrderController extends Controller
 
             $this->applyMembershipFilters($query, $request);
             $viewData['memberships'] = $query->paginate(15)->withQueryString();
-
-        } elseif ($activeTab == 'product') {
-            // ===================================
-            // Logika untuk Tab Produk
-            // ===================================
-            $query = Product::query()->with('user')->latest(); // Asumsi ada relasi 'user' di model Product
-
-            // Filter khusus untuk user dengan role 'User:Member'
-            if (Auth::user()->hasRole('User:Member')) {
-                $query->where('user_id', Auth::id());
-            }
-
-            $this->applyProductServiceFilters($query, $request);
-            $viewData['products'] = $query->paginate(15)->withQueryString();
-
-        } elseif ($activeTab == 'service') {
-            // ===================================
-            // Logika untuk Tab Layanan
-            // ===================================
-            $query = Service::query()->with('user')->latest(); // Asumsi ada relasi 'user' di model Service
-            
-            // Filter khusus untuk user dengan role 'User:Member'
-            if (Auth::user()->hasRole('User:Member')) {
-                $query->where('user_id', Auth::id());
-            }
-
-            $this->applyProductServiceFilters($query, $request);
-            $viewData['services'] = $query->paginate(15)->withQueryString();
         }
 
         return view('activation_order.index', $viewData);

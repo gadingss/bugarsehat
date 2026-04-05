@@ -23,8 +23,8 @@ class MenuSeeder extends Seeder
             ['id' => 10, 'name' => 'Kelola Membership', 'type' => 'menu', 'order' => 5, 'sub_id' => 5, 'url' => 'membership.index'],
 
             ['id' => 11, 'name' => 'Produk & Layanan', 'type' => 'submenu', 'order' => 4, 'is_permission' => true, 'icon' => 'map'],
-            ['id' => 12, 'name' => 'Daftar Produk', 'type' => 'menu', 'order' => 1, 'sub_id' => 11, 'url' => 'product'],
-            ['id' => 13, 'name' => 'Daftar Layanan', 'type' => 'menu', 'order' => 2, 'sub_id' => 11, 'url' => 'service'],
+            ['id' => 12, 'name' => 'Kelola Produk', 'type' => 'menu', 'order' => 1, 'sub_id' => 11, 'url' => 'product'],
+            ['id' => 13, 'name' => 'Kelola Layanan', 'type' => 'menu', 'order' => 2, 'sub_id' => 11, 'url' => 'service'],
             ['id' => 14, 'name' => 'Katalog Produk', 'type' => 'menu', 'order' => 3, 'sub_id' => 11, 'url' => 'products.index'],
             ['id' => 15, 'name' => 'Layanan Member', 'type' => 'menu', 'order' => 4, 'sub_id' => 11, 'url' => 'services.index'],
             ['id' => 16, 'name' => 'Produk Saya', 'type' => 'menu', 'order' => 5, 'sub_id' => 11, 'url' => 'products.my-products'],

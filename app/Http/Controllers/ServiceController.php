@@ -8,6 +8,7 @@ use App\Models\ServiceTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use App\Repository\MenuRepository;
 use Midtrans\Snap;
 use Midtrans\Config;
@@ -76,6 +77,97 @@ class ServiceController extends Controller
         }
     }
 
+    public function manage(Request $request)
+    {
+        $config = [
+            'title' => 'Kelola Layanan',
+            'title-alias' => 'Kelola Layanan',
+            'menu' => MenuRepository::generate($request),
+        ];
+
+        $services = Service::orderBy('name')->get();
+        return view('services.manage', compact('services', 'config'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'duration_minutes' => 'required|integer|min:0',
+            'category' => 'required|string',
+            'max_participants' => 'nullable|integer|min:1',
+            'sessions_count' => 'required|integer|min:1',
+            'description' => 'nullable|string',
+            'is_active' => 'boolean',
+            'requires_booking' => 'boolean',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3072',
+        ]);
+
+        $path = null;
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('layanans', 'public');
+        }
+
+        Service::create([
+            'name' => $request->name,
+            'price' => $request->price,
+            'duration_minutes' => $request->duration_minutes,
+            'category' => $request->category,
+            'max_participants' => $request->max_participants,
+            'sessions_count' => $request->sessions_count,
+            'description' => $request->description,
+            'is_active' => $request->has('is_active'),
+            'requires_booking' => $request->has('requires_booking'),
+            'image' => $path
+        ]);
+
+        return redirect()->back()->with('success', 'Layanan berhasil ditambahkan');
+    }
+
+    public function update(Request $request, $id)
+    {
+        $service = Service::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'duration_minutes' => 'required|integer|min:0',
+            'category' => 'required|string',
+            'max_participants' => 'nullable|integer|min:1',
+            'sessions_count' => 'required|integer|min:1',
+            'description' => 'nullable|string',
+            'is_active' => 'boolean',
+            'requires_booking' => 'boolean',
+        ]);
+
+        $service->update([
+            'name' => $request->name,
+            'price' => $request->price,
+            'duration_minutes' => $request->duration_minutes,
+            'category' => $request->category,
+            'max_participants' => $request->max_participants,
+            'sessions_count' => $request->sessions_count,
+            'description' => $request->description,
+            'is_active' => $request->has('is_active'),
+            'requires_booking' => $request->has('requires_booking'),
+        ]);
+
+        return redirect()->back()->with('success', 'Layanan berhasil diperbarui');
+    }
+
+    public function destroy($id)
+    {
+        $service = Service::findOrFail($id);
+        
+        if ($service->image && Storage::disk('public')->exists($service->image)) {
+            Storage::disk('public')->delete($service->image);
+        }
+        
+        $service->delete();
+        return redirect()->back()->with('success', 'Layanan berhasil dihapus');
+    }
+
     public function storeTemplate(Request $request, $serviceId)
     {
         $request->validate([
@@ -110,6 +202,30 @@ class ServiceController extends Controller
         $template->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    public function updateImage(Request $request, $id)
+    {
+        // Only Owner and Staff can update images
+        if (!Auth::user()->hasRole('User:Owner') && !Auth::user()->hasRole('User:Staff')) {
+            abort(403);
+        }
+
+        $service = Service::findOrFail($id);
+
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:3072',
+        ]);
+
+        // Delete old image if exists
+        if ($service->image && Storage::disk('public')->exists($service->image)) {
+            Storage::disk('public')->delete($service->image);
+        }
+
+        $path = $request->file('image')->store('layanan', 'public');
+        $service->update(['image' => $path]);
+
+        return redirect()->back()->with('success', 'Gambar layanan berhasil diperbarui.');
     }
 
     public function book(Request $request, $id)

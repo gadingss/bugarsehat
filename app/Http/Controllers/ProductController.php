@@ -10,6 +10,7 @@ use App\Repository\MenuRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Midtrans\Snap;
 use Midtrans\Config;
 
@@ -60,36 +61,130 @@ class ProductController extends Controller
     }
 
 
+    public function manage(Request $request)
+    {
+        $config = [
+            'title' => 'Kelola Produk',
+            'title-alias' => 'Kelola Produk',
+            'menu' => MenuRepository::generate($request),
+        ];
+
+        $products = Product::orderBy('name')->get();
+        return view('products.manage', compact('products', 'config'));
+    }
+
     public function store(Request $request)
     {
-        // Validasi file
         $request->validate([
-            'nama' => 'required|string|max:255',
-            'gambar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'name' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'category' => 'required|string',
+            'stock' => 'required|integer|min:0',
+            'description' => 'nullable|string',
+            'is_active' => 'boolean',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3072',
         ]);
 
-        // Simpan file ke storage/app/public/produk
-        if ($request->hasFile('gambar')) {
-            $path = $request->file('gambar')->store('produk', 'public');
+        $path = null;
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('produk', 'public');
         }
 
-        // Simpan ke database
         Product::create([
-            'nama' => $request->nama,
-            'gambar' => $path
+            'name' => $request->name,
+            'price' => $request->price,
+            'category' => $request->category,
+            'stock' => $request->stock,
+            'description' => $request->description,
+            'is_active' => $request->has('is_active'),
+            'image' => $path
         ]);
 
         return redirect()->back()->with('success', 'Produk berhasil ditambahkan');
     }
 
-    public function show($id)
+    public function update(Request $request, $id)
     {
-        $product = Product::active()->findOrFail($id);
+        $product = Product::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'category' => 'required|string',
+            'stock' => 'required|integer|min:0',
+            'description' => 'nullable|string',
+            'is_active' => 'boolean',
+            'is_promo' => 'boolean',
+            'promo_price' => 'nullable|numeric|min:0',
+        ]);
+
+        $product->update([
+            'name' => $request->name,
+            'price' => $request->price,
+            'category' => $request->category,
+            'stock' => $request->stock,
+            'description' => $request->description,
+            'is_active' => $request->has('is_active'),
+            'is_promo' => $request->has('is_promo'),
+            'promo_price' => $request->promo_price,
+        ]);
+
+        return redirect()->back()->with('success', 'Produk berhasil diperbarui');
+    }
+
+    public function destroy($id)
+    {
+        $product = Product::findOrFail($id);
+        
+        if ($product->image && Storage::disk('public')->exists($product->image)) {
+            Storage::disk('public')->delete($product->image);
+        }
+        
+        $product->delete();
+        return redirect()->back()->with('success', 'Produk berhasil dihapus');
+    }
+
+    public function updateImage(Request $request, $id)
+    {
+        // Only Owner and Staff can update images
+        if (!Auth::user()->hasRole('User:Owner') && !Auth::user()->hasRole('User:Staff')) {
+            abort(403);
+        }
+
+        $product = Product::findOrFail($id);
+
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:3072',
+        ]);
+
+        // Delete old image if exists
+        if ($product->image && Storage::disk('public')->exists($product->image)) {
+            Storage::disk('public')->delete($product->image);
+        }
+
+        $path = $request->file('image')->store('produk', 'public');
+        $product->update(['image' => $path]);
+
+        return redirect()->back()->with('success', 'Gambar produk berhasil diperbarui.');
+    }
+
+    public function show(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
         $relatedProducts = Product::active()
             ->where('category', $product->category)
             ->where('id', '!=', $product->id)
             ->take(4)
             ->get();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            $html = view('products.partials.detail', compact('product', 'relatedProducts'))->render();
+            return response()->json([
+                'success' => true,
+                'product' => $product,
+                'html' => $html,
+            ]);
+        }
 
         return view('products.show', compact('product', 'relatedProducts'));
     }

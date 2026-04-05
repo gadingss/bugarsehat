@@ -481,16 +481,11 @@ class CheckinController extends Controller
             return redirect()->back()->with('error', 'Anda tidak memiliki membership aktif.');
         }
 
-        $manualCode = strtoupper(\Illuminate\Support\Str::random(8));
-
-        DB::table('checkin_codes')->insert([
-            'user_id' => $user->id,
-            'code' => $manualCode,
-            'created_at' => now(),
-            'expires_at' => now()->addMinutes(1)
-        ]);
-
-        $qrData = $manualCode;
+        // Buat Manual Code statis berbasis ID User (Format: BS + 6 digit ID)
+        $manualCode = 'BS' . str_pad($user->id, 6, '0', STR_PAD_LEFT);
+        
+        // Buat QR Data statis
+        $qrData = "BUGAR_SEHAT_" . $user->id;
 
         $config = [
             'title' => 'Generate QR',
@@ -528,55 +523,35 @@ class CheckinController extends Controller
 
         // 2. Validasi: Pastikan 'manual_code' ada dalam request
         $request->validate([
-            'manual_code' => 'required|string|size:8',
+            'manual_code' => 'required|string|max:15',
         ]);
 
         $manualCode = strtoupper($request->manual_code);
 
-        // 3. Cari kode di database
-        $checkinCode = DB::table('checkin_codes')
-            ->where('code', $manualCode)
-            ->first();
-
-        // 4. Validasi kode: keberadaan, kedaluwarsa, dan penggunaan
-        if (!$checkinCode) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kode check-in tidak valid atau tidak ditemukan.'
-            ], 404);
-        }
-
-        // Cek apakah kode sudah kedaluwarsa
-        if (Carbon::now()->isAfter($checkinCode->expires_at)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kode check-in telah kedaluwarsa. Silakan minta member untuk membuat kode baru.'
-            ], 400);
-        }
-
-        // Cek apakah kode sudah pernah digunakan (membutuhkan kolom 'used_at')
-        if (!empty($checkinCode->used_at)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kode check-in ini sudah pernah digunakan.'
-            ], 400);
-        }
-
-        // 5. Proses check-in
-        DB::beginTransaction();
-        try {
-            // Tandai kode sebagai sudah digunakan
-            DB::table('checkin_codes')
-                ->where('id', $checkinCode->id)
-                ->update(['used_at' => now()]);
-
-            // Dapatkan ID member dari kode
+        // 3. Ekstrak User ID dari Static Code (Format: BS000012 atau BUGAR_SEHAT_12)
+        if (strpos($manualCode, 'BUGAR_SEHAT_') === 0) {
+            $parts = explode('_', $manualCode);
+            $memberId = (isset($parts[2])) ? (int) $parts[2] : 0;
+        } elseif (strpos($manualCode, 'BS') === 0) {
+            $memberId = (int) substr($manualCode, 2);
+        } else {
+            // Fallback: Jika staff memasukkan code lama yang ada di db
+            $checkinCode = DB::table('checkin_codes')->where('code', $manualCode)->whereNull('used_at')->where('expires_at', '>', now())->first();
+            if (!$checkinCode) {
+                return response()->json(['success' => false, 'message' => 'Kode check-in tidak valid atau telah kedaluwarsa.'], 404);
+            }
+            DB::table('checkin_codes')->where('id', $checkinCode->id)->update(['used_at' => now()]);
             $memberId = $checkinCode->user_id;
+        }
 
-            // Lakukan commit untuk update 'used_at' sebelum memanggil method lain
-            DB::commit();
+        // 4. Validasi user
+        $user = User::find($memberId);
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Member dengan kode ini tidak ditemukan.'], 404);
+        }
 
-            // 6. Panggil method check-in terpusat yang sudah ada
+        try {
+            // 5. Panggil method check-in terpusat
             return $this->performCheckin($memberId, $request, $staffUser->id);
 
         } catch (\Exception $e) {
