@@ -1,1 +1,0 @@
-<?php require __DIR__ . "/vendor/autoload.php"; $app = require_once __DIR__ . "/bootstrap/app.php"; $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class); $kernel->bootstrap(); $user = App\Models\User::where("phone", "like", "%5736508439%")->first(); if ($user) { echo "Name: " . $user->name . "\nEmail: " . $user->email . "\n"; } else { echo "Not found\n"; }

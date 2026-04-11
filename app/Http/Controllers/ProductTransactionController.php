@@ -12,15 +12,21 @@ class ProductTransactionController extends Controller
     public function index(Request $request)
     {
         $config = [
-            'title' => 'Product Transactions',
-            'title-alias' => 'Product',
+            'title' => 'Riwayat Produk',
+            'title-alias' => 'Transaksi Produk',
             'menu' => MenuRepository::generate($request),
         ];
 
-        $transactions = Transaction::with(['user', 'product'])
+        $query = Transaction::with(['user', 'product'])
             ->where('type', 'product')
-            ->orderBy('id', 'desc')
-            ->paginate(20);
+            ->orderBy('id', 'desc');
+
+        // Filter for Member role
+        if (!\Illuminate\Support\Facades\Auth::user()->hasRole('User:Staff') && !\Illuminate\Support\Facades\Auth::user()->hasRole('User:Owner') && !\Illuminate\Support\Facades\Auth::user()->hasRole('Super:Admin')) {
+            $query->where('user_id', \Illuminate\Support\Facades\Auth::id());
+        }
+
+        $transactions = $query->paginate(20);
 
         return view('product_transaction.index', compact('transactions', 'config'));
     }
@@ -29,6 +35,12 @@ class ProductTransactionController extends Controller
     public function show($id)
     {
         $transaction = Transaction::with(['user', 'product'])->findOrFail($id);
+
+        if (!\Illuminate\Support\Facades\Auth::user()->hasRole('User:Staff') && !\Illuminate\Support\Facades\Auth::user()->hasRole('User:Owner') && !\Illuminate\Support\Facades\Auth::user()->hasRole('Super:Admin')) {
+            if ($transaction->user_id !== \Illuminate\Support\Facades\Auth::id()) {
+                abort(403);
+            }
+        }
 
         return view('product_transaction.show', compact('transaction'));
     }
@@ -54,5 +66,22 @@ class ProductTransactionController extends Controller
         $transaction->delete();
 
         return redirect()->route('product-transactions.index')->with('success', 'Transaksi berhasil dihapus.');
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:transactions,id',
+        ]);
+
+        $user = \Illuminate\Support\Facades\Auth::user();
+        if (!$user->hasRole('User:Owner') && !$user->hasRole('owner') && !$user->hasRole('User:Staff') && !$user->hasRole('staff') && !$user->hasRole('Super:Admin')) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki akses.'], 403);
+        }
+
+        Transaction::whereIn('id', $request->ids)->delete();
+
+        return response()->json(['success' => true, 'message' => count($request->ids) . ' transaksi berhasil dihapus.']);
     }
 }

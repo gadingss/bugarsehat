@@ -100,17 +100,6 @@ Route::middleware('auth:web')->group(function () {
 
     // Staff Features - Member Management
     Route::prefix('staff')->name('staff.')->middleware(['role:User:Staff|User:Owner'])->group(function () {
-        Route::get('/member-management', [\App\Http\Controllers\Staff\MemberManagementController::class, 'index'])->name('member-management.index');
-        Route::get('/members', [\App\Http\Controllers\Staff\MemberManagementController::class, 'members'])->name('member-management.members');
-        Route::get('/members/{id}', [\App\Http\Controllers\Staff\MemberManagementController::class, 'show'])->name('member-management.show');
-        Route::get('/members/{id}/edit', [\App\Http\Controllers\Staff\MemberManagementController::class, 'edit'])->name('member-management.edit');
-        Route::put('/members/{id}', [\App\Http\Controllers\Staff\MemberManagementController::class, 'update'])->name('member-management.update');
-        Route::get('/members/{id}/membership', [\App\Http\Controllers\Staff\MemberManagementController::class, 'manageMembership'])->name('member-management.membership');
-        Route::post('/members/{id}/assign-membership', [\App\Http\Controllers\Staff\MemberManagementController::class, 'assignMembership'])->name('member-management.assign-membership');
-        Route::post('/members/{id}/extend-membership', [\App\Http\Controllers\Staff\MemberManagementController::class, 'extendMembership'])->name('member-management.extend-membership');
-        Route::post('/members/{id}/suspend-membership', [\App\Http\Controllers\Staff\MemberManagementController::class, 'suspendMembership'])->name('member-management.suspend-membership');
-        Route::post('/members/{id}/reactivate-membership', [\App\Http\Controllers\Staff\MemberManagementController::class, 'reactivateMembership'])->name('member-management.reactivate-membership');
-        Route::get('/membership-report', [\App\Http\Controllers\Staff\MemberManagementController::class, 'membershipReport'])->name('member-management.report');
 
         // Transaction Management
         Route::get('/transaction-management', [\App\Http\Controllers\Staff\TransactionManagementController::class, 'index'])->name('transaction-management.index');
@@ -124,6 +113,9 @@ Route::middleware('auth:web')->group(function () {
 
         // Product Purchase Validation
         Route::get('/product-purchase-validation', [\App\Http\Controllers\Staff\ProductApprovalController::class, 'index'])->name('product-purchase-validation.index');
+
+        // Trainer Monitoring
+        Route::get('/monitor-trainer', [\App\Http\Controllers\Staff\MonitorTrainerController::class, 'index'])->name('monitor-trainer.index');
     });
 
     // Owner Features - System Monitoring & Business Analytics
@@ -187,6 +179,8 @@ Route::middleware('auth:web')->group(function () {
     Route::delete('/services/booking/{transactionId}/cancel', [ServiceController::class, 'cancelBooking'])->name('services.cancel-booking');
     Route::get('/services/qr-scan', [ServiceController::class, 'qrScan'])->name('services.qr-scan');
     Route::post('/services/qr-process', [ServiceController::class, 'processQrService'])->name('services.qr-process');
+    Route::get('/services/{id}/schedules', [ServiceController::class, 'getSchedules'])->name('services.schedules');
+    Route::post('/services/claim-quota', [ServiceController::class, 'claimQuota'])->name('services.claim-quota');
 
     // Service Template Routes
     Route::middleware(['role:User:Staff|User:Owner'])->group(function () {
@@ -249,8 +243,13 @@ Route::middleware('auth:web')->group(function () {
     Route::put('/service/{id}', [ServiceController::class, 'update'])->name('service.update')->middleware(['can:service']);
     Route::delete('/service/{id}', [ServiceController::class, 'destroy'])->name('service.destroy')->middleware(['can:service']);
     Route::get('/product_transaction', [ProductTransactionController::class, 'index'])->name('product_transaction')->middleware(['can:product_transaction']);
+    Route::post('/product_transaction/bulk-delete', [ProductTransactionController::class, 'bulkDelete'])->name('product_transaction.bulk_delete')->middleware(['can:product_transaction']);
+    
     Route::get('/member_transaction', [MemberTransactionController::class, 'index'])->name('member_transaction')->middleware(['can:member_transaction']);
+    Route::post('/member_transaction/bulk-delete', [MemberTransactionController::class, 'bulkDelete'])->name('member_transaction.bulk_delete')->middleware(['can:member_transaction']);
+    
     Route::get('/service_transaction', [ServiceTransactionController::class, 'index'])->name('service_transaction')->middleware(['can:service_transaction']);
+    Route::post('/service_transaction/bulk-delete', [ServiceTransactionController::class, 'bulkDelete'])->name('service_transaction.bulk_delete')->middleware(['can:service_transaction']);
     Route::get('/service_transaction/{serviceTransaction}', [ServiceTransactionController::class, 'show'])->name('service_transaction.show');
     Route::post('/service_transaction/{serviceTransaction}/cancel', [ServiceTransactionController::class, 'cancel'])->name('service_transaction.cancel');
     Route::post('/service_transaction/{serviceTransaction}/approve', [ServiceTransactionController::class, 'approve'])->name('service_transaction.approve');
@@ -332,9 +331,11 @@ Route::middleware('auth:web')->group(function () {
 
     // --- Packet Membership Routes ---
     Route::get('/packet_membership', [PacketMembershipController::class, 'index'])->name('packet_membership')->middleware(['can:packet_membership']);
+    Route::get('/master_membership', [PacketMembershipController::class, 'master'])->name('master_membership')->middleware(['can:master_membership']);
     Route::post('/packet_membership', [PacketMembershipController::class, 'store'])->name('packet_membership.store')->middleware(['can:packet_membership']);
     Route::get('/packet_membership/{id}', [PacketMembershipController::class, 'show'])->name('packet_membership.show')->middleware(['can:packet_membership']);
     Route::get('/packet_membership/{id}/edit', [PacketMembershipController::class, 'edit'])->name('packet_membership.edit')->middleware(['can:packet_membership']);
+    Route::get('/master_membership/{id}/edit', [PacketMembershipController::class, 'editMaster'])->name('master_membership.edit')->middleware(['can:master_membership']);
     Route::put('/packet_membership/{id}', [PacketMembershipController::class, 'update'])->name('packet_membership.update')->middleware(['can:packet_membership']);
     Route::delete('/packet_membership/{id}', [PacketMembershipController::class, 'destroy'])->name('packet_membership.destroy')->middleware(['can:packet_membership']);
 
@@ -376,11 +377,16 @@ Route::middleware('auth:web')->group(function () {
         // Progress & Sesi Latihan
         Route::get('/progress', [\App\Http\Controllers\Trainer\TrainerController::class, 'progressIndex'])->name('progress.index');
         Route::put('/progress/sessions/{session}', [\App\Http\Controllers\Trainer\TrainerController::class, 'updateSession'])->name('progress.session.update');
+        Route::post('/progress/sessions/bulk', [\App\Http\Controllers\Trainer\TrainerController::class, 'bulkSessionAction'])->name('progress.session.bulk');
+        Route::delete('/progress/transaction/{id}', [\App\Http\Controllers\Trainer\TrainerController::class, 'destroyTransaction'])->name('progress.transaction.destroy');
 
         // Ketersediaan Waktu
         Route::get('/availability', [\App\Http\Controllers\Trainer\TrainerController::class, 'availability'])->name('availability.index');
         Route::post('/availability', [\App\Http\Controllers\Trainer\TrainerController::class, 'storeAvailability'])->name('availability.store');
         Route::delete('/availability/{id}', [\App\Http\Controllers\Trainer\TrainerController::class, 'destroyAvailability'])->name('availability.destroy');
+
+        // Penggajian Trainer
+        Route::get('/salary', [\App\Http\Controllers\Trainer\SalaryController::class, 'index'])->name('salary.index');
     });
 
     // --- Member Schedule & Booking Routes ---

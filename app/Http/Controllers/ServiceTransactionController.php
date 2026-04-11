@@ -253,4 +253,21 @@ class ServiceTransactionController extends Controller
 
         return redirect()->back()->with('success', 'Sesi berhasil dihapus');
     }
+
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:additional_service_transactions,id',
+        ]);
+
+        $user = Auth::user();
+        if (!$user->hasRole('User:Owner') && !$user->hasRole('owner') && !$user->hasRole('User:Staff') && !$user->hasRole('staff') && !$user->hasRole('Super:Admin')) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki akses.'], 403);
+        }
+
+        ServiceTransaction::whereIn('id', $request->ids)->delete();
+
+        return response()->json(['success' => true, 'message' => count($request->ids) . ' transaksi layanan berhasil dihapus.']);
+    }
 }

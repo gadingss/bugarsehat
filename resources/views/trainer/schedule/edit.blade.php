@@ -56,6 +56,31 @@
             </div>
 
             <div class="mb-3">
+                <label for="service_id" class="form-label required">Layanan Kelas</label>
+                <select class="form-select @error('service_id') is-invalid @enderror" id="service_id" name="service_id" required>
+                    <option value="">Pilih Layanan</option>
+                    @foreach($services as $service)
+                        <option value="{{ $service->id }}" data-sessions="{{ json_encode($service->sessionTemplates) }}" data-max-sessions="{{ $service->sessions_count }}" {{ old('service_id', $schedule->service_id) == $service->id ? 'selected' : '' }}>
+                            {{ $service->name }} ({{ $service->sessions_count }} Sesi)
+                        </option>
+                    @endforeach
+                </select>
+                @error('service_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="mb-3" id="session_container" style="display: none;">
+                <label for="session_number" class="form-label required">Topik / Sesi Ke-</label>
+                <select class="form-select @error('session_number') is-invalid @enderror" id="session_number" name="session_number">
+                    <option value="">Pilih Sesi</option>
+                </select>
+                @error('session_number')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="mb-3">
                 <label for="capacity" class="form-label required">Kapasitas Peserta</label>
                 <input type="number" class="form-control @error('capacity') is-invalid @enderror" id="capacity" name="capacity" value="{{ old('capacity', $schedule->capacity) }}" min="1" required>
                 @error('capacity')
@@ -69,6 +94,68 @@
             </div>
         </form>
     </div>
-    <!--end::Body-->
 </div>
+@endsection
+
+@section('script')
+<script>
+    $(document).ready(function() {
+        function populateSessions() {
+            var selectedOpt = $('#service_id').find(':selected');
+            if(selectedOpt.val()) {
+                var templates = selectedOpt.data('sessions');
+                var maxSessions = selectedOpt.data('max-sessions');
+                
+                var oldSess = "{{ old('session_number', $schedule->session_number) }}";
+                $('#session_number').empty().append('<option value="">Pilih Sesi</option>');
+                
+                for(var i = 1; i <= maxSessions; i++) {
+                    var topicStr = "";
+                    if (templates && templates.length > 0) {
+                        var t = templates.find(item => item.session_number == i);
+                        if(t && t.topic) {
+                            topicStr = " - " + t.topic;
+                        }
+                    }
+                    var selected = (oldSess == i) ? 'selected' : '';
+                    $('#session_number').append('<option value="'+i+'" '+selected+'>Sesi '+i+topicStr+'</option>');
+                }
+                
+                $('#session_container').slideDown();
+            } else {
+                $('#session_container').slideUp();
+                $('#session_number').empty();
+            }
+        }
+        
+        $('#service_id').on('change', function() {
+            populateSessions();
+            
+            // Auto fill title when service change manually
+            var selectedOpt = $(this).find(':selected');
+            if(selectedOpt.val()) {
+                var autoTitle = selectedOpt.text().split('(')[0].trim() + " - Sesi " + ($('#session_number').val() || "...");
+                if (!$('#title').val() || $('#title').data('auto')) {
+                    $('#title').val(autoTitle).data('auto', true);
+                }
+            }
+        });
+        
+        $('#session_number').on('change', function() {
+            var selectedOpt = $('#service_id').find(':selected');
+            if(selectedOpt.val() && $(this).val()) {
+                var autoTitle = selectedOpt.text().split('(')[0].trim() + " - Sesi " + $(this).val();
+                if (!$('#title').val() || $('#title').data('auto')) {
+                    $('#title').val(autoTitle).data('auto', true);
+                }
+            }
+        });
+        
+        $('#title').on('input', function() {
+            $(this).data('auto', false);
+        });
+
+        populateSessions(); // On load
+    });
+</script>
 @endsection

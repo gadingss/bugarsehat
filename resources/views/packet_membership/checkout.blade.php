@@ -117,26 +117,9 @@
                                         <label class="required fw-semibold fs-6 mb-5">Pilih Metode Pembayaran</label>
                                         
                                         <div class="row g-5">
-                                            <!--begin::QRIS Option-->
-                                            <div class="col-6 col-lg-3">
-                                                <input type="radio" class="btn-check" name="payment_method" value="qris" id="payment_qris" required checked>
-                                                <label class="btn btn-outline btn-outline-dashed btn-active-light-primary p-7 d-flex align-items-center" for="payment_qris">
-                                                    <span class="svg-icon svg-icon-3x me-5">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                                            <path d="M5 5H9V9H5V5Z" fill="currentColor"/><path d="M15 5H19V9H15V5Z" fill="currentColor"/><path d="M5 15H9V19H5V15Z" fill="currentColor"/><path d="M16 16V14H18V11H20V14H22V16H20V18H18V21H16V18H14V16H16Z" fill="currentColor"/><path opacity="0.3" d="M3 3H11V11H3V3Z" fill="currentColor"/><path opacity="0.3" d="M13 3H21V11H13V3Z" fill="currentColor"/><path opacity="0.3" d="M3 13H11V21H3V13Z" fill="currentColor"/><path opacity="0.3" d="M13 13H21V21H13V13Z" fill="currentColor"/>
-                                                        </svg>
-                                                    </span>
-                                                    <span class="d-block fw-semibold text-start">
-                                                        <span class="text-dark fw-bold d-block fs-4 mb-2">QRIS</span>
-                                                        <span class="text-muted fw-semibold fs-6">Scan QR</span>
-                                                    </span>
-                                                </label>
-                                            </div>
-                                            <!--end::QRIS Option-->
-
                                             <!--begin::Cash Option-->
                                             <div class="col-6 col-lg-3">
-                                                <input type="radio" class="btn-check" name="payment_method" value="cash" id="payment_cash">
+                                                <input type="radio" class="btn-check" name="payment_method" value="cash" id="payment_cash" required checked>
                                                 <label class="btn btn-outline btn-outline-dashed btn-active-light-primary p-7 d-flex align-items-center" for="payment_cash">
                                                     <span class="svg-icon svg-icon-3x me-5">
                                                         {{-- Icon untuk Cash --}}
@@ -152,23 +135,6 @@
                                                 </label>
                                             </div>
                                             <!--end::Cash Option-->
-                                            
-                                            <!--begin::Transfer Option-->
-                                            <div class="col-6 col-lg-3">
-                                                <input type="radio" class="btn-check" name="payment_method" value="transfer" id="payment_transfer">
-                                                <label class="btn btn-outline btn-outline-dashed btn-active-light-primary p-7 d-flex align-items-center" for="payment_transfer">
-                                                    <span class="svg-icon svg-icon-3x me-5">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                                            <path d="M8 11h8v2H8v-2zM8 7h12v2H8V7zM8 15h5v2H8v-2zM3 3h18c.55 0 1 .45 1 1v16c0 .55-.45 1-1 1H3c-.55 0-1-.45-1-1V4c0-.55.45-1 1-1zm0 2v14h18V5H3z" fill="currentColor"/>
-                                                        </svg>
-                                                    </span>
-                                                    <span class="d-block fw-semibold text-start">
-                                                        <span class="text-dark fw-bold d-block fs-4 mb-2">Transfer</span>
-                                                        <span class="text-muted fw-semibold fs-6">Bank Transfer</span>
-                                                    </span>
-                                                </label>
-                                            </div>
-                                            <!--end::Transfer Option-->
 
                                             <!--begin::Midtrans/Card Option-->
                                             <div class="col-6 col-lg-3">

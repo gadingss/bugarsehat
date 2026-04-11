@@ -55,10 +55,13 @@ class SendMembershipReminder extends Command
             }
 
             // Format message
-            $message = "Halo {$user->name},\n\n";
+            $renewalLink = route('membership.packages'); // URL Katalog Membership untuk Member
+            $message = "Halo *{$user->name}*,\n\n";
             $message .= "Kami dari *Bugar Sehat* ingin mengingatkan bahwa masa aktif membership Anda untuk paket *{$package->name}* akan segera berakhir dalam 3 hari lagi (pada tanggal *" . Carbon::parse($membership->end_date)->format('d-m-Y') . "*).\n\n";
-            $message .= "Jangan lewatkan rutinitas olahraga Anda! Silakan hubungi staff kami atau datang ke Bugar Sehat untuk melakukan perpanjangan.\n\n";
-            $message .= "Terima kasih dan tetap fit!\n- Tim Bugar Sehat";
+            $message .= "Jangan lewatkan rutinitas olahraga Anda! Silakan klik tautan di bawah ini untuk memperpanjang atau memilih paket baru secara online:\n";
+            $message .= "🔗 {$renewalLink}\n\n";
+            $message .= "Atau hubungi staff kami jika Anda butuh bantuan.\n\n";
+            $message .= "Terima kasih dan tetap bugar!\n- Tim Bugar Sehat";
 
             $this->info("Sending reminder to {$user->name} ({$user->phone})...");
             

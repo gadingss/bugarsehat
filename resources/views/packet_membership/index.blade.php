@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Paket Membership')
+@section('title', $config['title'] ?? 'Paket Membership')
 
 @section('content')
 <div id="kt_app_content" class="app-content flex-column-fluid">
@@ -21,21 +21,7 @@
                     </div>
                 </div>
                 <div class="card-toolbar">
-                    <div class="d-flex justify-content-end" data-kt-packet-table-toolbar="base">
-                    @if(auth()->user()->hasRole('staff') || auth()->user()->hasRole('owner'))
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_add_packet">
-                        <span class="svg-icon svg-icon-2">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <rect opacity="0.5" x="11.364" y="20.364" width="16" height="2" rx="1"
-                                      transform="rotate(-90 11.364 20.364)" fill="currentColor" />
-                                <rect x="4.36396" y="11.364" width="16" height="2" rx="1"
-                                      fill="currentColor" />
-                            </svg>
-                        </span>
-                        Tambah Paket
-                    </button>
-                    @endif
-                    </div>
+
                 </div>
             </div>
             <!--end::Card header-->
@@ -59,28 +45,7 @@
                                         <a href="#" class="fs-4 fw-bold text-hover-primary text-gray-600 m-0">{{ $packet->name }}</a>
                                     </div>
                                     <div class="card-toolbar m-0">
-                                        @if(!auth()->user()->hasRole('member'))
-                                            <button type="button" class="btn btn-clean btn-sm btn-icon btn-icon-primary btn-active-light-primary" data-kt-menu-trigger="click" data-kt-menu-placement="bottom-end">
-                                                <span class="svg-icon svg-icon-3">
-                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                        <rect x="10" y="10" width="4" height="4" rx="2" fill="currentColor"/>
-                                                        <rect x="17" y="10" width="4" height="4" rx="2" fill="currentColor"/>
-                                                        <rect x="3" y="10" width="4" height="4" rx="2" fill="currentColor"/>
-                                                    </svg>
-                                                </span>
-                                            </button>
-                                            <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg-light-primary fw-semibold w-200px" data-kt-menu="true">
-                                                <div class="menu-item px-3">
-                                                    <div class="menu-content text-muted pb-2 px-3 fs-7 text-uppercase">Actions</div>
-                                                </div>
-                                                <div class="menu-item px-3">
-                                                    <a href="{{ route('packet_membership.edit', $packet->id) }}" class="menu-link px-3">Edit</a>
-                                                </div>
-                                                <div class="menu-item px-3">
-                                                    <a href="#" class="menu-link px-3" onclick="deletePacket({{ $packet->id }})">Delete</a>
-                                                </div>
-                                            </div>
-                                        @endif
+
                                     </div>
                                 </div>
                                 <!--end::Card header-->
@@ -115,8 +80,20 @@
                                         </div>
                                         <div class="d-flex align-items-center py-2">
                                             <span class="bullet bg-primary me-3"></span>
-                                            Akses semua fasilitas
+                                            Akses fasilitas gym reguler
                                         </div>
+                                        @if($packet->services->count() > 0)
+                                        <div class="d-flex align-items-center py-2 text-primary">
+                                            <span class="bullet bg-primary me-3"></span>
+                                            Include {{ $packet->services->count() }} Layanan Tambahan
+                                        </div>
+                                        @endif
+                                        @if($packet->product_details)
+                                        <div class="d-flex align-items-center py-2 text-success">
+                                            <span class="bullet bg-success me-3"></span>
+                                            Include Produk Fisik
+                                        </div>
+                                        @endif
                                     </div>
                                     <!--end::Features-->
                                     
@@ -152,89 +129,7 @@
     </div>
 </div>
 
-@if(!auth()->user()->hasRole('member'))
-<!--begin::Modal - Add/Edit Packet-->
-<div class="modal fade" id="kt_modal_add_packet" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered mw-650px">
-        <div class="modal-content">
-            <div class="modal-header" id="kt_modal_add_packet_header">
-                <h2 class="fw-bold">{{ isset($packet) ? 'Edit' : 'Tambah' }} Paket Membership</h2>
-                <div class="btn btn-icon btn-sm btn-active-icon-primary" data-kt-packets-modal-action="close">
-                    <span class="svg-icon svg-icon-1">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="currentColor"/>
-                            <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="currentColor"/>
-                        </svg>
-                    </span>
-                </div>
-            </div>
-            
-            <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
-                <form id="kt_modal_add_packet_form" class="form" action="{{ isset($packet) ? route('packet_membership.update', $packet->id ?? '') : route('packet_membership.store') }}" method="POST">
-                    @csrf
-                    @if(isset($packet))
-                        @method('PUT')
-                    @endif
-                    
-                    <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_packet_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_packet_header" data-kt-scroll-wrappers="#kt_modal_add_packet_scroll" data-kt-scroll-offset="300px">
-                        
-                        <div class="fv-row mb-7">
-                            <label class="required fw-semibold fs-6 mb-2">Nama Paket</label>
-                            <input type="text" name="name" class="form-control form-control-solid mb-3 mb-lg-0" placeholder="Nama paket membership" value="{{ old('name', $packet->name ?? '') }}" required/>
-                            @error('name')
-                                <div class="text-danger fs-7">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        
-                        <div class="fv-row mb-7">
-                            <label class="required fw-semibold fs-6 mb-2">Harga</label>
-                            <input type="number" name="price" class="form-control form-control-solid mb-3 mb-lg-0" placeholder="0" value="{{ old('price', $packet->price ?? '') }}" min="0" required/>
-                            @error('price')
-                                <div class="text-danger fs-7">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        
-                        <div class="row g-9 mb-7">
-                            <div class="col-md-6 fv-row">
-                                <label class="required fw-semibold fs-6 mb-2">Durasi (Hari)</label>
-                                <input type="number" name="duration_days" class="form-control form-control-solid" placeholder="30" value="{{ old('duration_days', $packet->duration_days ?? '') }}" min="1" required/>
-                                @error('duration_days')
-                                    <div class="text-danger fs-7">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="col-md-6 fv-row">
-                                <label class="required fw-semibold fs-6 mb-2">Maksimal Kunjungan</label>
-                                <input type="number" name="max_visits" class="form-control form-control-solid" placeholder="20" value="{{ old('max_visits', $packet->max_visits ?? '') }}" min="1" required/>
-                                @error('max_visits')
-                                    <div class="text-danger fs-7">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                        
-                        <div class="fv-row mb-7">
-                            <label class="fw-semibold fs-6 mb-2">Deskripsi</label>
-                            <textarea name="description" class="form-control form-control-solid" rows="3" placeholder="Deskripsi paket membership">{{ old('description', $packet->description ?? '') }}</textarea>
-                            @error('description')
-                                <div class="text-danger fs-7">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                    
-                    <div class="text-center pt-15">
-                        <button type="reset" class="btn btn-light me-3" data-kt-packets-modal-action="cancel">Batal</button>
-                        <button type="submit" class="btn btn-primary" data-kt-packets-modal-action="submit">
-                            <span class="indicator-label">{{ isset($packet) ? 'Update' : 'Simpan' }}</span>
-                            <span class="indicator-progress">Please wait...
-                            <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-<!--end::Modal - Add/Edit Packet-->
-@endif
+
 
 <!--begin::Modal - Packet Detail-->
 <div class="modal fade" id="kt_modal_packet_detail" tabindex="-1" aria-hidden="true">
@@ -310,28 +205,22 @@
                             <div class="col-md-6">
                                 <div class="d-flex align-items-center mb-4">
                                     <span class="svg-icon svg-icon-2 svg-icon-primary me-3">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
-                                        </svg>
+                                        <i class="fas fa-dumbbell fs-2 text-primary"></i>
                                     </span>
                                     <div>
                                         <div class="fw-semibold">Akses Fasilitas</div>
-                                        <div class="text-gray-600">Semua peralatan gym</div>
+                                        <div class="text-gray-600">Fasilitas gym reguler</div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-center mb-4">
-                                    <span class="svg-icon svg-icon-2 svg-icon-primary me-3">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
-                                        </svg>
-                                    </span>
-                                    <div>
-                                        <div class="fw-semibold">Konsultasi</div>
-                                        <div class="text-gray-600">Gratis konsultasi trainer</div>
-                                    </div>
-                                </div>
+                            <!-- placeholder untuk services dan produk (diisi via JS) -->
+                            <div class="col-12" id="detail-services-container" style="display:none;">
+                                <h6 class="fw-bold mt-3 mb-2 text-primary">Include Layanan Bundle:</h6>
+                                <ul class="text-gray-600" id="detail-services-list"></ul>
+                            </div>
+                            <div class="col-12" id="detail-product-container" style="display:none;">
+                                <h6 class="fw-bold mt-3 mb-2 text-success">Include Klaim Produk Fisik:</h6>
+                                <p class="text-gray-600 mb-0" id="detail-product-details"></p>
                             </div>
                         </div>
                     </div>
@@ -352,31 +241,12 @@
 </div>
 <!--end::Modal - Packet Detail-->
 
-<!-- Delete Form -->
-@if(!auth()->user()->hasRole('member'))
-<form id="delete-form" method="POST" style="display: none;">
-    @csrf
-    @method('DELETE')
-</form>
-@endif
+
 @endsection
 
 @section('script')
 <script>
-    // Auto open modal if editing
-    @if(isset($packet) && !auth()->user()->hasRole('member'))
-        $('#kt_modal_add_packet').modal('show');
-    @endif
 
-    // Close modal handlers
-    @if(!auth()->user()->hasRole('member'))
-    $('[data-kt-packets-modal-action="close"], [data-kt-packets-modal-action="cancel"]').on('click', function() {
-        $('#kt_modal_add_packet').modal('hide');
-        if (window.location.href.includes('/edit')) {
-            window.location.href = "{{ route('packet_membership') }}";
-        }
-    });
-    @endif
 
     // Show packet detail function
     function showPacketDetail(id) {
@@ -417,6 +287,24 @@
                     
                     $('#detail-symbol').attr('class', 'symbol-label ' + symbolClass);
                     
+                    if (packet.services && packet.services.length > 0) {
+                        $('#detail-services-container').show();
+                        let servicesHtml = '';
+                        packet.services.forEach(function(svc) {
+                            servicesHtml += `<li>${svc.name} (${svc.sessions_count} Sesi)</li>`;
+                        });
+                        $('#detail-services-list').html(servicesHtml);
+                    } else {
+                        $('#detail-services-container').hide();
+                    }
+
+                    if (packet.product_details && packet.product_details.trim().length > 0) {
+                        $('#detail-product-container').show();
+                        $('#detail-product-details').text(packet.product_details);
+                    } else {
+                        $('#detail-product-container').hide();
+                    }
+                    
                     // Update button
                     const btnText = packet.name == 'Trial' ? 'Ambil Trial' : 'Pilih Paket';
                     const btnClass = packet.name == 'Trial' ? 'btn-info' : 
@@ -446,29 +334,7 @@
         });
     }
 
-    // Delete function
-    @if(!auth()->user()->hasRole('member'))
-    function deletePacket(id) {
-        Swal.fire({
-            text: "Apakah Anda yakin ingin menghapus paket ini?",
-            icon: "warning",
-            showCancelButton: true,
-            buttonsStyling: false,
-            confirmButtonText: "Ya, hapus!",
-            cancelButtonText: "Batal",
-            customClass: {
-                confirmButton: "btn fw-bold btn-danger",
-                cancelButton: "btn fw-bold btn-active-light-primary"
-            }
-        }).then(function (result) {
-            if (result.value) {
-                const form = document.getElementById('delete-form');
-                form.action = "{{ route('packet_membership.destroy', '') }}/" + id;
-                form.submit();
-            }
-        });
-    }
-    @endif
+
 
     // Search functionality
     $('[data-kt-packet-table-filter="search"]').on('keyup', function() {

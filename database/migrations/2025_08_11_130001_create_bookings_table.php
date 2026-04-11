@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('bookings', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('schedule_id')->constrained('schedules')->onDelete('cascade');
-            $table->string('status')->default('confirmed'); // confirmed, cancelled
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('bookings')) {
+            Schema::create('bookings', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+                $table->foreignId('schedule_id')->constrained('schedules')->onDelete('cascade');
+                $table->string('status')->default('confirmed'); // confirmed, cancelled
+                $table->timestamps();
+            });
+        }
     }
 
     public function down(): void

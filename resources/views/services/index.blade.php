@@ -146,23 +146,11 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label border-top pt-3 w-100">Tanggal Sesi</label>
-                            <input type="date" class="form-control" name="scheduled_date" required
-                                min="{{ date('Y-m-d') }}">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Jam</label>
-                            <select class="form-select" name="scheduled_time" required>
-                                <option value="">Pilih Jam</option>
-                                @for($h = 8; $h <= 17; $h++)
-                                    <option value="{{ str_pad($h, 2, '0', STR_PAD_LEFT) }}:00">
-                                        {{ str_pad($h, 2, '0', STR_PAD_LEFT) }}:00
-                                    </option>
-                                    <option value="{{ str_pad($h, 2, '0', STR_PAD_LEFT) }}:30">
-                                        {{ str_pad($h, 2, '0', STR_PAD_LEFT) }}:30
-                                    </option>
-                                @endfor
+                            <label class="form-label border-top pt-3 w-100">Pilih Jadwal Kelas Tersedia</label>
+                            <select class="form-select" name="schedule_id" id="schedule-select" required>
+                                <option value="">Pilih Jadwal</option>
                             </select>
+                            <div class="form-text mt-1 text-muted"><i class="fas fa-info-circle me-1"></i>Hanya menampilkan kelas yang dibuka oleh trainer dan masih memiliki kuota.</div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Catatan</label>
@@ -212,6 +200,29 @@
 
         function bookService(id) {
             document.getElementById('service-id').value = id;
+            
+            // Fetch schedules
+            const select = document.getElementById('schedule-select');
+            select.innerHTML = '<option value="">Memuat jadwal...</option>';
+            
+            fetch(`/services/${id}/schedules`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                select.innerHTML = '<option value="">Pilih Jadwal</option>';
+                if (data.success && data.schedules.length > 0) {
+                    data.schedules.forEach(schedule => {
+                        select.innerHTML += `<option value="${schedule.id}">${schedule.text}</option>`;
+                    });
+                } else {
+                    select.innerHTML = '<option value="">Tidak ada jadwal kelas terbuka</option>';
+                }
+            })
+            .catch(err => {
+                select.innerHTML = '<option value="">Gagal memuat jadwal</option>';
+            });
+
             new bootstrap.Modal('#bookingModal').show();
         }
 

@@ -8,6 +8,11 @@
                 <span class="card-label fw-bold fs-3 mb-1">{{ $config['title'] }}</span>
                 <span class="text-muted mt-1 fw-semibold fs-7">{{ $config['title-alias'] }}</span>
             </h3>
+            <div class="card-toolbar">
+                <a href="{{ route('trainer.schedule.create') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> Open Kelas Baru
+                </a>
+            </div>
         </div>
         <!--end::Header-->
 
@@ -19,6 +24,35 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
+
+            <form method="GET" action="{{ route('trainer.schedule.index') }}" class="row g-3 bg-light p-4 rounded mb-7 bg-opacity-50">
+                <div class="col-md-3">
+                    <label class="form-label fs-7 fw-bold">Jenis Sesi</label>
+                    <select name="type" class="form-select form-select-sm">
+                        <option value="all" {{ request('type') == 'all' ? 'selected' : '' }}>Semua Tipe</option>
+                        <option value="class" {{ request('type') == 'class' ? 'selected' : '' }}>Latihan Bersama (Class)</option>
+                        <option value="pt" {{ request('type') == 'pt' ? 'selected' : '' }}>Personal Training (PT)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fs-7 fw-bold">Dari Tanggal</label>
+                    <input type="date" name="date_from" class="form-control form-control-sm" value="{{ request('date_from', now()->subDays(30)->format('Y-m-d')) }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fs-7 fw-bold">Sampai Tanggal</label>
+                    <input type="date" name="date_to" class="form-control form-control-sm" value="{{ request('date_to') }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-sm btn-info w-100 flex-grow-1">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    @if(request()->has('type'))
+                        <a href="{{ route('trainer.schedule.index') }}" class="btn btn-sm btn-light-danger ms-2 px-3" title="Reset Filters">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    @endif
+                </div>
+            </form>
 
             <div class="row g-6 g-xl-9">
                 @forelse($allSchedules as $item)
@@ -83,10 +117,17 @@
                             <div class="card-footer border-0 pt-0 pb-5">
                                 <div class="d-flex gap-2">
                                     @if($item->type == 'Class')
-                                        <a href="{{ route('trainer.schedule.edit', $item->id) }}"
-                                            class="btn btn-sm btn-light-info flex-grow-1">
-                                            <i class="fas fa-edit me-1"></i> Edit
-                                        </a>
+                                        @if(isset($item->item_count) && $item->item_count > 1)
+                                            <a href="{{ route('trainer.schedule.show', $item->id) }}"
+                                                class="btn btn-sm btn-light-info flex-grow-1">
+                                                <i class="fas fa-list me-1"></i> Detail {{ $item->item_count }} Sesi
+                                            </a>
+                                        @else
+                                            <a href="{{ route('trainer.schedule.edit', $item->id) }}"
+                                                class="btn btn-sm btn-light-info flex-grow-1">
+                                                <i class="fas fa-edit me-1"></i> Edit
+                                            </a>
+                                        @endif
                                     @else
                                         <a href="{{ route('service_transaction.show', $item->id) }}"
                                             class="btn btn-sm btn-light-success flex-grow-1">
@@ -95,11 +136,11 @@
                                     @endif
                                     @if($item->type == 'Class')
                                         <form action="{{ route('trainer.schedule.destroy', $item->id) }}" method="POST"
-                                            onsubmit="return confirm('Hapus jadwal ini?')">
+                                            onsubmit="return confirm('{{ isset($item->item_count) && $item->item_count > 1 ? 'Hapus seluruh ' . $item->item_count . ' sesi pertemuan untuk kelas ini?' : 'Hapus jadwal ini?' }}')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-light-danger">
-                                                <i class="fas fa-trash"></i>
+                                            <button type="submit" class="btn btn-sm btn-light-danger flex-grow-1">
+                                                <i class="fas fa-trash"></i> Hapus
                                             </button>
                                         </form>
                                     @endif

@@ -42,11 +42,29 @@
                                                 class="text-gray-800 fw-bold d-block fs-6">{{ $ub->trainer->name ?? '-' }}</span>
                                         </td>
                                         <td>
-                                            <span
-                                                class="text-primary fw-bold d-block fs-6">{{ \Carbon\Carbon::parse($ub->scheduled_date)->format('d M Y') }}</span>
-                                            <span
-                                                class="text-muted fs-7">{{ \Carbon\Carbon::parse($ub->scheduled_date)->format('H:i') }}
-                                                WIB</span>
+                                            @php
+                                                $pendingSessionsCount = $ub->serviceSessions->where('status', 'pending')->whereNull('scheduled_date')->count();
+                                                $totalSessionsCount = $ub->serviceSessions->count();
+                                            @endphp
+
+                                            @if($ub->scheduled_date)
+                                                <span class="text-primary fw-bold d-block fs-6">{{ \Carbon\Carbon::parse($ub->scheduled_date)->format('d M Y') }}</span>
+                                                <span class="text-muted fs-7">{{ \Carbon\Carbon::parse($ub->scheduled_date)->format('H:i') }} WIB</span>
+                                            @elseif($totalSessionsCount > 0)
+                                                @if($pendingSessionsCount > 0)
+                                                    <span class="badge badge-light-success fw-bold fs-7 mb-1 px-3 py-2"><i class="fas fa-ticket-alt text-success me-1"></i> Kuota Belum Diklaim</span>
+                                                    <span class="text-muted fs-8 d-block mb-3">Siap dijadwalkan untuk {{ $totalSessionsCount }} sesi kelas penuh</span>
+                                                    <button class="btn btn-sm btn-primary w-100" onclick="claimQuota({{ $ub->id }}, {{ $ub->service_id }})">
+                                                        Pilih Jadwal Kelas
+                                                    </button>
+                                                @else
+                                                    <span class="badge badge-light-secondary fw-bold fs-7 mb-1 px-3 py-2"><i class="fas fa-calendar-check text-muted me-1"></i> Terjadwal Penuh</span>
+                                                    <span class="text-muted fs-8 d-block">Seluruh rangkaian sesi pembelajaran ini telah dijadwalkan.</span>
+                                                @endif
+                                            @else
+                                                <span class="text-warning fw-bold d-block fs-6">Status Menunggu</span>
+                                                <span class="text-muted fs-7 mb-1">Belum digenerate</span>
+                                            @endif
                                         </td>
                                         <td class="text-end pe-4">
                                             <span class="badge badge-light-primary mb-2">{{ ucfirst($ub->status) }}</span>
@@ -221,4 +239,96 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Booking Quota -->
+    <div class="modal fade" id="bookingQuotaModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="fw-bold">Gunakan Kuota Layanan</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="booking-quota-form">
+                        @csrf
+                        <input type="hidden" id="quota-transaction-id" name="transaction_id">
+                        <input type="hidden" id="quota-service-id" name="service_id">
+
+                        <div class="mb-3">
+                            <label class="form-label border-top pt-3 w-100">Pilih Jadwal Kelas Tersedia</label>
+                            <select class="form-select" name="schedule_id" id="quota-schedule-select" required>
+                                <option value="">Pilih Jadwal</option>
+                            </select>
+                            <div class="form-text mt-1 text-muted"><i class="fas fa-info-circle me-1"></i>Hanya menampilkan kelas yang dibuka oleh trainer dan masih memiliki kuota.</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Konfirmasi Booking</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+@endsection
+
+@section('script')
+    <script>
+        function claimQuota(transactionId, serviceId) {
+            document.getElementById('quota-transaction-id').value = transactionId;
+            document.getElementById('quota-service-id').value = serviceId;
+            
+            const select = document.getElementById('quota-schedule-select');
+            select.innerHTML = '<option value="">Memuat jadwal...</option>';
+            
+            fetch(`/services/${serviceId}/schedules`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                select.innerHTML = '<option value="">Pilih Jadwal</option>';
+                if (data.success && data.schedules.length > 0) {
+                    data.schedules.forEach(schedule => {
+                        select.innerHTML += `<option value="${schedule.id}">${schedule.text}</option>`;
+                    });
+                } else {
+                    select.innerHTML = '<option value="">Tidak ada jadwal kelas terbuka</option>';
+                }
+            })
+            .catch(err => {
+                select.innerHTML = '<option value="">Gagal memuat jadwal</option>';
+            });
+
+            new bootstrap.Modal('#bookingQuotaModal').show();
+        }
+
+        document.getElementById('booking-quota-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = Object.fromEntries(new FormData(this).entries());
+            const url = `{{ route('services.claim-quota') }}`;
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Gagal memproses booking');
+                return data;
+            })
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                alert('Gagal: ' + error.message);
+            });
+        });
+    </script>
 @endsection

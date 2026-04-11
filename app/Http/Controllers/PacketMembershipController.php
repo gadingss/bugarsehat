@@ -35,13 +35,31 @@ class PacketMembershipController extends Controller
      */
     public function index(Request $request)
     {
+        $user = Auth::user();
+        $isMember = $user && ($user->hasRole('member') || $user->role === 'member');
+        
         $config = [
-            'title' => 'Paket Membership',
-            'title-alias' => 'Daftar Paket',
+            'title' => 'Katalog Membership',
+            'title-alias' => 'Katalog Paket',
             'menu' => MenuRepository::generate($request),
         ];
-        $packets = MembershipPacket::orderBy('price', 'asc')->get();
+        $packets = MembershipPacket::with('services')->orderBy('price', 'asc')->get();
         return view('packet_membership.index', compact('config', 'packets'));
+    }
+
+    /**
+     * Menampilkan halaman Master Data Paket Membership (Table)
+     */
+    public function master(Request $request)
+    {
+        $config = [
+            'title' => 'Kelola Membership',
+            'title-alias' => 'Master Data Paket',
+            'menu' => MenuRepository::generate($request),
+        ];
+        $packets = MembershipPacket::with('services')->orderBy('price', 'asc')->get();
+        $services = \App\Models\Service::active()->get();
+        return view('packet_membership.master', compact('config', 'packets', 'services'));
     }
 
     /**
@@ -49,7 +67,7 @@ class PacketMembershipController extends Controller
      */
     public function show($id)
     {
-        $packet = MembershipPacket::findOrFail($id);
+        $packet = MembershipPacket::with('services')->findOrFail($id);
         return response()->json(['success' => true, 'data' => $packet]);
     }
 
@@ -59,14 +77,23 @@ class PacketMembershipController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:50|unique:membership_packets,name',
+            'name' => 'required|string|max:50|unique:membership_packages,name',
             'price' => 'required|numeric|min:0',
             'duration_days' => 'required|integer|min:1',
             'max_visits' => 'required|integer|min:1',
             'description' => 'nullable|string|max:500',
+            'product_details' => 'nullable|string',
+            'services' => 'nullable|array',
+            'services.*' => 'exists:additional_services,id',
         ]);
-        MembershipPacket::create($request->all());
-        return redirect()->route('packet-membership.index')->with('success', 'Paket membership berhasil ditambahkan.');
+        
+        $packet = MembershipPacket::create($request->except('services'));
+        
+        if ($request->has('services')) {
+            $packet->services()->sync($request->services);
+        }
+        
+        return redirect()->back()->with('success', 'Paket membership berhasil ditambahkan.');
     }
 
     /**
@@ -75,7 +102,7 @@ class PacketMembershipController extends Controller
     public function edit(Request $request, $id)
     {
         $config = [
-            'title' => 'Edit Paket Membership',
+            'title' => 'Edit Katalog Membership',
             'title-alias' => 'Edit Paket',
             'menu' => MenuRepository::generate($request),
         ];
@@ -85,20 +112,52 @@ class PacketMembershipController extends Controller
     }
 
     /**
+     * Menampilkan halaman master dengan modal edit yang aktif.
+     */
+    public function editMaster(Request $request, $id)
+    {
+        $config = [
+            'title' => 'Edit Kelola Membership',
+            'title-alias' => 'Edit Paket Master',
+            'menu' => MenuRepository::generate($request),
+        ];
+        $packet = MembershipPacket::with('services')->findOrFail($id);
+        $packets = MembershipPacket::with('services')->orderBy('price', 'asc')->get();
+        $services = \App\Models\Service::active()->get();
+        return view('packet_membership.master', compact('config', 'packets', 'packet', 'services'));
+    }
+
+    /**
      * Memperbarui data paket membership di database.
      */
     public function update(Request $request, $id)
     {
         $packet = MembershipPacket::findOrFail($id);
         $request->validate([
-            'name' => ['required', 'string', 'max:50', Rule::unique('membership_packets')->ignore($packet->id)],
+            'name' => ['required', 'string', 'max:50', Rule::unique('membership_packages')->ignore($packet->id)],
             'price' => 'required|numeric|min:0',
             'duration_days' => 'required|integer|min:1',
             'max_visits' => 'required|integer|min:1',
             'description' => 'nullable|string|max:500',
+            'product_details' => 'nullable|string',
+            'services' => 'nullable|array',
+            'services.*' => 'exists:additional_services,id',
         ]);
-        $packet->update($request->all());
-        return redirect()->route('packet-membership.index')->with('success', 'Paket membership berhasil diperbarui.');
+        
+        $packet->update($request->except('services'));
+        
+        if ($request->has('services')) {
+            $packet->services()->sync($request->services);
+        } else {
+            $packet->services()->detach();
+        }
+        
+        // For update, we want to go back to the base route rather than back to raw edit url
+        // So we will just redirect back, but if back is the edit url, redirect to the index or master based on referring url
+        if (str_contains(url()->previous(), 'master_membership')) {
+            return redirect()->route('master_membership')->with('success', 'Paket membership berhasil diperbarui.');
+        }
+        return redirect()->route('packet_membership')->with('success', 'Paket membership berhasil diperbarui.');
     }
 
     /**
@@ -108,10 +167,10 @@ class PacketMembershipController extends Controller
     {
         $packet = MembershipPacket::findOrFail($id);
         if ($packet->memberships()->where('status', 'active')->exists()) {
-            return redirect()->route('packet-membership.index')->with('error', 'Gagal! Paket masih digunakan oleh member aktif.');
+            return redirect()->back()->with('error', 'Gagal! Paket masih digunakan oleh member aktif.');
         }
         $packet->delete();
-        return redirect()->route('packet-membership.index')->with('success', 'Paket membership berhasil dihapus.');
+        return redirect()->back()->with('success', 'Paket membership berhasil dihapus.');
     }
 
     /**

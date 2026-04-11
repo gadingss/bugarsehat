@@ -38,17 +38,48 @@ class TrainerController extends Controller
 
         $trainer = Auth::user();
 
-        $transactions = \App\Models\ServiceTransaction::where('trainer_id', $trainer->id)
+        // Get transactions directly assigned to this trainer
+        $directTransactionIds = \App\Models\ServiceTransaction::where('trainer_id', $trainer->id)
             ->whereIn('status', ['scheduled', 'completed'])
+            ->pluck('id');
+
+        // Also get transaction IDs where any of their sessions are assigned to this trainer (from quota claims)
+        $sessionTransactionIds = \App\Models\ServiceSession::where('trainer_id', $trainer->id)
+            ->whereNotNull('scheduled_date')
+            ->pluck('service_transaction_id');
+
+        $allTransactionIds = $directTransactionIds->merge($sessionTransactionIds)->unique();
+
+        $filters = [
+            'date_from' => $request->get('date_from'),
+            'date_to' => $request->get('date_to'),
+            'search' => $request->get('search')
+        ];
+
+        $query = \App\Models\ServiceTransaction::whereIn('id', $allTransactionIds)
             ->with([
                 'user',
                 'service',
                 'serviceSessions' => function ($q) {
                     $q->orderBy('session_number', 'asc');
                 }
-            ])
-            ->orderBy('scheduled_date', 'desc')
-            ->get();
+            ]);
+
+        if (!empty($filters['date_from'])) {
+            $query->whereDate('created_at', '>=', $filters['date_from']);
+        }
+
+        if (!empty($filters['date_to'])) {
+            $query->whereDate('created_at', '<=', $filters['date_to']);
+        }
+
+        if (!empty($filters['search'])) {
+            $query->whereHas('user', function($q) use ($filters) {
+                $q->where('name', 'like', '%' . $filters['search'] . '%');
+            });
+        }
+
+        $transactions = $query->orderBy('created_at', 'desc')->get();
 
         return view('trainer.progress.index', compact('config', 'transactions'));
     }
@@ -78,6 +109,55 @@ class TrainerController extends Controller
         ]);
 
         return redirect()->route('trainer.progress.index')->with('success', 'Sesi ke-' . $session->session_number . ' pada layanan ' . $session->serviceTransaction->service->name . ' berhasil diperbarui');
+    }
+
+    // 🔹 Bulk Action untuk Seses (Hadir, Missed, Hapus)
+    public function bulkSessionAction(Request $request)
+    {
+        $request->validate([
+            'session_ids' => 'required|array',
+            'session_ids.*' => 'exists:service_sessions,id',
+            'action' => 'required|in:attended,missed,delete'
+        ]);
+
+        $trainerId = Auth::id();
+
+        // Verifikasi kepemilikan sesi
+        $sessions = \App\Models\ServiceSession::whereIn('id', $request->session_ids)->get();
+        foreach ($sessions as $session) {
+            $transaksiAuthTrainer = $session->serviceTransaction->trainer_id === $trainerId;
+            $sesiAuthTrainer = $session->trainer_id === $trainerId;
+            if (!$transaksiAuthTrainer && !$sesiAuthTrainer) {
+                // If the trainer does not own the parent transaction, nor the session itself
+                abort(403, 'Akses ditolak.');
+            }
+        }
+
+        if ($request->action === 'delete') {
+            \App\Models\ServiceSession::whereIn('id', $request->session_ids)->delete();
+            $msg = count($sessions) . ' Sesi berhasil dihapus secara massal.';
+        } else {
+            \App\Models\ServiceSession::whereIn('id', $request->session_ids)->update(['status' => $request->action]);
+            $msg = count($sessions) . ' Sesi berhasil ditandai sebagai ' . ($request->action == 'attended' ? 'Hadir/Selesai' : 'Missed/Kelewat') . '.';
+        }
+
+        return redirect()->route('trainer.progress.index')->with('success', $msg);
+    }
+
+    // 🔹 Hapus Transaksi Kosong / Penuh
+    public function destroyTransaction($id)
+    {
+        $trainer = Auth::user();
+        $transaction = \App\Models\ServiceTransaction::findOrFail($id);
+
+        if ($transaction->trainer_id !== $trainer->id) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        $transaction->serviceSessions()->delete();
+        $transaction->delete();
+
+        return back()->with('success', 'Riwayat booking/layanan terpilih berhasil dihapus.');
     }
 
     // 🔹 Ketersediaan Waktu

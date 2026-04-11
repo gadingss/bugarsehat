@@ -23,16 +23,27 @@ class MenuRepository
         $user = Auth::user();
 
         foreach ($result as $key => $item) {
-            // =================================================================
-            // BLOK PERBAIKAN: Pengecualian Khusus untuk Laporan Pendapatan
-            // =================================================================
-            // Kita tambahkan pengecekan khusus di sini. Jika nama route (dari kolom 'url')
-            // adalah untuk laporan pendapatan, kita pastikan hanya role 'owner' yang bisa melihatnya.
-            // Ganti 'income.report.index' jika nama route Anda berbeda.
-            // Pengecekan $user->hasRole('owner') mengasumsikan Anda menggunakan Spatie Permission.
-            if (isset($item['url']) && $item['url'] === 'income.report.index' && !$user->hasRole('owner')) {
-                unset($result[$key]); // Hapus menu ini dari daftar
-                continue; // Lanjut ke item menu berikutnya
+            // Batasi SEMUA menu Laporan agar hanya bisa dilihat oleh Owner (User:Owner)
+            // Daftar URL laporan: transaction_report, membership_report, checkin_report, income_report, owner.trainer-salary.index
+            $laporanUrls = [
+                'transaction_report', 
+                'membership_report', 
+                'checkin_report', 
+                'income_report', 
+                'owner.trainer-salary.index'
+            ];
+            
+            if (isset($item['url']) && in_array($item['url'], $laporanUrls)) {
+                if (!$user->hasRole('User:Owner')) {
+                    unset($result[$key]);
+                    continue;
+                }
+            }
+
+            // Hapus menu history_membership dari daftar (diminta dihapus via prompt)
+            if (isset($item['url']) && $item['url'] === 'history_membership') {
+                unset($result[$key]);
+                continue;
             }
             // =================================================================
             // AKHIR BLOK PERBAIKAN
@@ -42,6 +53,9 @@ class MenuRepository
 
             if (!empty($item['url'])) {
                 $routeName = $item['url'];
+
+
+
                 $result[$key]['permission'] = $routeName;
 
                 // FIX: Map URL 'pengguna.index' to permission 'pengguna' because Spatie only has 'pengguna'
@@ -51,6 +65,11 @@ class MenuRepository
 
                 if ($routeName === 'member.schedule.index') {
                     $result[$key]['permission'] = 'member.schedule.view';
+                }
+
+                // Bypass permission mapping for monitor-trainer route
+                if ($routeName === 'staff.monitor-trainer.index') {
+                    unset($result[$key]['permission']);
                 }
 
 

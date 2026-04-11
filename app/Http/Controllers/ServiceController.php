@@ -77,6 +77,31 @@ class ServiceController extends Controller
         }
     }
 
+    public function getSchedules($serviceId)
+    {
+        $schedules = \App\Models\Schedule::with('trainer', 'service')
+            ->where('service_id', $serviceId)
+            ->where('start_time', '>', now())
+            ->get()
+            ->groupBy(function($item) {
+                return $item->service_id . '_' . $item->created_at->format('Y-m-d_H:i');
+            })
+            ->map(function ($group) {
+                $first = $group->sortBy('start_time')->first();
+                $count = $group->count();
+                $title = $first->service->name ?? preg_replace('/ Sesi \d+$/', '', $first->title);
+                return [
+                    'id' => $first->id,
+                    'text' => $first->start_time->format('d M Y, H:i') . ' - ' . $title . 
+                              ($count > 1 ? ' (' . $count . ' Pertemuan)' : '') . 
+                              ' (Trainer: ' . ($first->trainer->name ?? '-') .') - Terisi: ' . $first->bookings()->count() . '/' . $first->capacity
+                ];
+            })
+            ->values();
+            
+        return response()->json(['success' => true, 'schedules' => $schedules]);
+    }
+
     public function manage(Request $request)
     {
         $config = [
@@ -231,59 +256,213 @@ class ServiceController extends Controller
     public function book(Request $request, $id)
     {
         $request->validate([
-            'scheduled_date' => 'required|date|after_or_equal:today',
-            'scheduled_time' => 'required',
+            'schedule_id' => 'required|exists:schedules,id',
             'notes' => 'nullable|string|max:500',
-            'trainer_id' => 'nullable|exists:users,id'
         ]);
 
         $service = Service::active()->findOrFail($id);
         $user = Auth::user();
+        $schedule = \App\Models\Schedule::findOrFail($request->schedule_id);
 
-        $activeMembership = Membership::where('user_id', $user->id)
-            ->where('status', 'active')
-            ->first();
-
-        if (!$activeMembership) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda harus memiliki membership aktif untuk memesan layanan.'
-            ], 403);
-        }
         if (!$service->requires_booking) {
             return response()->json(['success' => false, 'message' => 'Layanan ini tidak memerlukan booking.']);
         }
 
+        // Get full batch to book all sessions simultaneously
+        $createdAtStart = $schedule->created_at->copy()->startOfMinute();
+        $createdAtEnd = $schedule->created_at->copy()->endOfMinute();
+        $batchSchedules = \App\Models\Schedule::where('service_id', $schedule->service_id)
+            ->whereBetween('created_at', [$createdAtStart, $createdAtEnd])
+            ->orderBy('start_time')
+            ->get();
+
+        // Check if any schedule is full
+        foreach ($batchSchedules as $batchItem) {
+            if ($batchItem->bookings()->count() >= $batchItem->capacity) {
+                return response()->json(['success' => false, 'message' => 'Maaf, kuota jadwal kelas ini sudah penuh pada salah satu daftar sesinya.']);
+            }
+        }
+
+        // Check if member already booked any schedule in batch
+        $alreadyBooked = \App\Models\Booking::where('user_id', $user->id)
+            ->whereIn('schedule_id', $batchSchedules->pluck('id'))
+            ->exists();
+        
+        if ($alreadyBooked) {
+            return response()->json(['success' => false, 'message' => 'Anda sudah terdaftar di kelas ini.']);
+        }
+
         DB::beginTransaction();
         try {
-            $transaction = ServiceTransaction::create([
-                'user_id' => $user->id,
-                'service_id' => $service->id,
-                'trainer_id' => $request->trainer_id ?: null,
-                'transaction_date' => now(),
-                'scheduled_date' => $request->scheduled_date . ' ' . $request->scheduled_time,
-                'amount' => $service->price,
-                'status' => $service->price > 0 ? 'pending' : 'scheduled',
-                'notes' => $request->notes
-            ]);
+            // Check if user has available pending quota transaction
+            // We find any transaction that has ENOUGH pending sessions
+            $availableSessions = null;
+            $transaction = null;
+            
+            $availableTransactions = \App\Models\ServiceTransaction::where('user_id', $user->id)
+                  ->where('service_id', $service->id)
+                  ->whereIn('status', ['scheduled', 'completed'])
+                  ->with(['serviceSessions' => function($q) {
+                      $q->where('status', 'pending')
+                        ->whereNull('scheduled_date')
+                        ->orderBy('session_number', 'asc');
+                  }])
+                  ->get();
+
+            foreach ($availableTransactions as $tx) {
+                if ($tx->serviceSessions->count() >= $batchSchedules->count()) {
+                    $transaction = $tx;
+                    $availableSessions = $tx->serviceSessions->take($batchSchedules->count());
+                    break;
+                }
+            }
+
+            $statusMsg = 'Layanan terjadwal.';
+            $redirectUrl = null;
+
+            if ($transaction && $availableSessions) {
+                // Use Quota
+                foreach ($batchSchedules as $i => $batchItem) {
+                    $availableSessions[$i]->update([
+                        'scheduled_date' => $batchItem->start_time,
+                        'topic' => $batchItem->title,
+                        'trainer_id' => $batchItem->trainer_id,
+                    ]);
+                    \App\Models\Booking::create([
+                        'user_id' => $user->id,
+                        'schedule_id' => $batchItem->id,
+                        'status' => 'confirmed'
+                    ]);
+                }
+                
+                $redirectUrl = route('services.my-bookings');
+                $statusMsg = 'Berhasil booking kelas menggunakan ' . count($batchSchedules) . ' Kuota Sesi Membership Anda!';
+            } else {
+                // No quota, need to buy new transaction
+                $transaction = ServiceTransaction::create([
+                    'user_id' => $user->id,
+                    'service_id' => $service->id,
+                    'trainer_id' => $schedule->trainer_id, // Base trainer
+                    'transaction_date' => now(),
+                    'scheduled_date' => $schedule->start_time,
+                    'amount' => $service->price,
+                    'status' => $service->price > 0 ? 'pending' : 'scheduled',
+                    'notes' => $request->notes
+                ]);
+
+                // Create sessions
+                foreach ($batchSchedules as $num => $batchItem) {
+                    \App\Models\ServiceSession::create([
+                        'service_transaction_id' => $transaction->id,
+                        'session_number' => $num + 1,
+                        'status' => 'pending',
+                        'scheduled_date' => $service->price == 0 ? $batchItem->start_time : null,
+                        'topic' => $batchItem->title,
+                        'trainer_id' => $batchItem->trainer_id,
+                    ]);
+
+                    \App\Models\Booking::create([
+                        'user_id' => $user->id,
+                        'schedule_id' => $batchItem->id,
+                        'status' => 'confirmed'
+                    ]);
+                }
+                
+                $redirectUrl = $service->price > 0
+                    ? route('services.payment', $transaction->id)
+                    : route('services.booking-success', $transaction->id);
+                $statusMsg = $service->price > 0 ? 'Booking ' . count($batchSchedules) . ' Sesi Kelas berhasil! Silakan selesaikan pembayaran.' : 'Booking ' . count($batchSchedules) . ' Sesi Kelas berhasil (Gratis)!';
+            }
+
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => $service->price > 0
-                    ? 'Booking berhasil! Silakan bayar.'
-                    : 'Booking berhasil! Layanan terjadwal.',
-                'redirect' => $service->price > 0
-                    ? route('services.payment', $transaction->id)
-                    : route('services.booking-success', $transaction->id)
+                'message' => $statusMsg,
+                'redirect' => $redirectUrl
             ]);
         } catch (\Exception $e) {
             DB::rollback();
-            \Log::error('Booking Error: ' . $e->getMessage(), ['exception' => $e]);
+            \Illuminate\Support\Facades\Log::error('Booking Error: ' . $e->getMessage(), ['exception' => $e]);
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal membuat booking: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function claimQuota(Request $request)
+    {
+        $request->validate([
+            'transaction_id' => 'required|exists:additional_service_transactions,id',
+            'schedule_id' => 'required|exists:schedules,id',
+        ]);
+
+        $user = Auth::user();
+        $transaction = \App\Models\ServiceTransaction::findOrFail($request->transaction_id);
+        $schedule = \App\Models\Schedule::findOrFail($request->schedule_id);
+
+        if ($transaction->user_id !== $user->id) {
+            return response()->json(['success' => false, 'message' => 'Tidak punya hak akses kuota ini.'], 403);
+        }
+
+        $createdAtStart = $schedule->created_at->copy()->startOfMinute();
+        $createdAtEnd = $schedule->created_at->copy()->endOfMinute();
+        $batchSchedules = \App\Models\Schedule::where('service_id', $schedule->service_id)
+            ->whereBetween('created_at', [$createdAtStart, $createdAtEnd])
+            ->orderBy('start_time')
+            ->get();
+
+        foreach ($batchSchedules as $batchItem) {
+            if ($batchItem->bookings()->count() >= $batchItem->capacity) {
+                return response()->json(['success' => false, 'message' => 'Maaf, kuota maksimal jadwal kelas ini sudah penuh.']);
+            }
+        }
+
+        $alreadyBooked = \App\Models\Booking::where('user_id', $user->id)
+            ->whereIn('schedule_id', $batchSchedules->pluck('id'))
+            ->exists();
+        
+        if ($alreadyBooked) {
+            return response()->json(['success' => false, 'message' => 'Anda sudah terdaftar di kelas ini.']);
+        }
+
+        $availableSessions = \App\Models\ServiceSession::where('service_transaction_id', $transaction->id)
+            ->where('status', 'pending')
+            ->whereNull('scheduled_date')
+            ->orderBy('session_number', 'asc')
+            ->limit($batchSchedules->count())
+            ->get();
+
+        if ($availableSessions->count() < $batchSchedules->count()) {
+            return response()->json(['success' => false, 'message' => 'Kuota sesi paket Anda (' . $availableSessions->count() . ' Sesi Tersisa) tidak mencukupi untuk mengikuti rangkaian kelas ini yang membutuhkan ' . $batchSchedules->count() . ' pertemuan.']);
+        }
+
+        DB::beginTransaction();
+        try {
+            foreach ($batchSchedules as $i => $batchItem) {
+                $availableSessions[$i]->update([
+                    'scheduled_date' => $batchItem->start_time,
+                    'topic' => $batchItem->title,
+                    'trainer_id' => $batchItem->trainer_id,
+                ]);
+
+                \App\Models\Booking::create([
+                    'user_id' => $user->id,
+                    'schedule_id' => $batchItem->id,
+                    'status' => 'confirmed'
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Berhasil klaim ' . count($batchSchedules) . ' sesi kuota untuk rangkaian kelas ini!',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['success' => false, 'message' => 'Gagal klaim: ' . $e->getMessage()], 500);
         }
     }
 
@@ -419,10 +598,13 @@ class ServiceController extends Controller
             ->paginate(15);
 
         $upcomingBookings = ServiceTransaction::where('user_id', $user->id)
-            ->where('status', 'scheduled')
-            ->where('scheduled_date', '>', now())
+            ->whereIn('status', ['scheduled', 'pending'])
+            ->where(function($q) {
+                $q->where('scheduled_date', '>', now())
+                  ->orWhereNull('scheduled_date');
+            })
             ->with(['service', 'trainer', 'serviceSessions'])
-            ->orderBy('scheduled_date', 'asc')
+            ->orderByRaw('-scheduled_date DESC') // nulls go first or last depending on DB, works fine
             ->get();
 
         return view('services.my-bookings', compact('config', 'user', 'bookings', 'upcomingBookings'));

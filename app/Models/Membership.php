@@ -9,6 +9,20 @@ use Carbon\Carbon;
 class Membership extends Model
 {
     use HasFactory;
+
+    protected static function booted()
+    {
+        static::updated(function ($membership) {
+            if ($membership->isDirty('status') && $membership->status === 'active') {
+                $membership->grantPackageQuotas();
+            }
+        });
+        static::created(function ($membership) {
+            if ($membership->status === 'active') {
+                $membership->grantPackageQuotas();
+            }
+        });
+    }
     
     protected $table = 'memberships';
     protected $primaryKey = 'id';
@@ -83,5 +97,42 @@ class Membership extends Model
     public function canVisit()
     {
         return $this->isActive() && $this->remaining_visits > 0;
+    }
+
+    public function grantPackageQuotas()
+    {
+        if (!$this->package) {
+            return;
+        }
+
+        $alreadyGranted = \App\Models\ServiceTransaction::where('user_id', $this->user_id)
+            ->where('notes', 'like', '%[Membership #'.$this->id.']%')
+            ->exists();
+
+        if ($alreadyGranted) {
+            return;
+        }
+
+        foreach ($this->package->services as $service) {
+            $transaction = \App\Models\ServiceTransaction::create([
+                'user_id' => $this->user_id,
+                'service_id' => $service->id,
+                'transaction_date' => now(),
+                'amount' => 0,
+                'status' => 'scheduled',
+                'notes' => 'Didapatkan dari Paket Membership ' . $this->package->name . ' [Membership #'.$this->id.']'
+            ]);
+
+            // Create pending sessions based on the service's sessions_count
+            $sessionsCount = $service->sessions_count ?? 1;
+            for ($i = 1; $i <= $sessionsCount; $i++) {
+                \App\Models\ServiceSession::create([
+                    'service_transaction_id' => $transaction->id,
+                    'session_number' => $i,
+                    'status' => 'pending',
+                    // topic bisa diisi ketika booking schedule
+                ]);
+            }
+        }
     }
 }

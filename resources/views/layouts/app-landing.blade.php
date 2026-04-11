@@ -338,7 +338,7 @@
                   @endif
                 </ul>
 
-                <a href="{{route('login')}}" class="btn btn-membership w-100">Pilih Paket</a>
+                <a href="{{ url('/packet-membership') }}" class="btn btn-membership w-100">Pilih Paket</a>
               </div>
             </div><!-- End Membership Card -->
             @php

@@ -113,13 +113,15 @@ class CheckinController extends Controller
             ->with('package')
             ->first();
 
+        $qrData = "BUGAR_SEHAT_" . $user->id;
+
         $config = [
             'title' => 'QR Scan',
             'title-alias' => ' QR Scan',
             'menu' => MenuRepository::generate($request),
         ];
 
-        return view('checkin.staff-qr-scanner', compact('user', 'activeMembership', 'config'));
+        return view('checkin.staff-qr-scanner', compact('user', 'activeMembership', 'config', 'qrData'));
     }
 
     public function processQrCheckin(Request $request)
@@ -212,17 +214,74 @@ class CheckinController extends Controller
             ->where('status', 'active')
             ->first();
 
-        // 2. Cek Sesi Layanan/PT hari ini
-        $scheduledSession = \App\Models\ServiceSession::whereHas('serviceTransaction', function ($q) use ($user) {
-            $q->where('user_id', $user->id);
-        })
-            ->whereDate('scheduled_date', now()->toDateString())
-            ->where('status', 'pending')
-            ->orderBy('scheduled_date', 'asc') // Pick the earliest one if multiple
+        // 2. Cek Sesi Layanan/PT — hanya yang hari ini DAN masih dalam jam kelas
+        $now = now();
+
+        // Cek apakah member punya Booking (via tabel bookings → schedules) yang aktif hari ini dalam jam kelas
+        $validBooking = \App\Models\Booking::where('user_id', $user->id)
+            ->whereHas('schedule', function ($q) use ($now) {
+                $q->whereDate('start_time', $now->toDateString())
+                  ->where('start_time', '<=', $now->copy()->addMinutes(30)) // 30 mnt toleransi sebelum mulai
+                  ->where('end_time', '>=', $now);                          // belum lewat jam selesai
+            })
+            ->with('schedule')
             ->first();
 
-        // Jika tidak punya keduanya, tolak
-        if (!$activeMembership && !$scheduledSession) {
+        // Tentukan "scheduledSession" untuk ditandai 'attended' saat checkin berhasil
+        $scheduledSession = null;
+        if ($validBooking) {
+            // Cari service session yang terkait jadwal ini
+            $scheduledSession = \App\Models\ServiceSession::whereHas('serviceTransaction', function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->where('scheduled_date', $validBooking->schedule->start_time->toDateTimeString())
+                ->where('status', 'pending')
+                ->first();
+        } else {
+            // Fallback: Sesi PT personal (tanpa booking kelas, langsung dari service_transaction.trainer_id)
+            $scheduledSession = \App\Models\ServiceSession::whereHas('serviceTransaction', function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->whereDate('scheduled_date', $now->toDateString())
+                ->where('status', 'pending')
+                ->where('scheduled_date', '<=', $now->copy()->addMinutes(30))
+                ->where('scheduled_date', '>=', $now->copy()->subHours(2))
+                ->orderBy('scheduled_date', 'asc')
+                ->first();
+        }
+
+        // Jika saat ini tidak ada jadwal yang valid/bisa dimasuki, tahan checkin bila ternyata dia ADA jadwal hari ini di jam lain.
+        if (!$validBooking && !$scheduledSession) {
+            // Cek kelas out of time
+            $bookingOutOfTime = \App\Models\Booking::where('user_id', $user->id)
+                ->whereHas('schedule', function ($q) use ($now) {
+                    $q->whereDate('start_time', $now->toDateString());
+                })
+                ->with('schedule')
+                ->first();
+
+            // Cek PT out of time
+            $ptOutOfTime = \App\Models\ServiceSession::whereHas('serviceTransaction', function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                })
+                ->whereDate('scheduled_date', $now->toDateString())
+                ->where('status', 'pending')
+                ->first();
+
+            if ($bookingOutOfTime || $ptOutOfTime) {
+                $startTime = $bookingOutOfTime 
+                    ? \Carbon\Carbon::parse($bookingOutOfTime->schedule->start_time)->format('H:i') 
+                    : \Carbon\Carbon::parse($ptOutOfTime->scheduled_date)->format('H:i');
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => "Belum Waktunya! Anda memiliki jadwal Layanan/Kelas hari ini pada pukul {$startTime} WIB. Sistem menahan check-in Anda agar tidak memotong kuota harian. Anda baru bisa Check-in 30 menit sebelum kelas dimulai."
+                ], 400);
+            }
+        }
+
+        // Jika tidak punya membership dan tidak punya jadwal valid hari ini sama sekali, tolak mutlak
+        if (!$activeMembership && !$validBooking && !$scheduledSession) {
             return response()->json(['success' => false, 'message' => 'Member tidak memiliki membership aktif atau jadwal layanan hari ini.'], 400);
         }
 
@@ -237,16 +296,26 @@ class CheckinController extends Controller
             }
         }
 
-        $todayCheckin = CheckinLog::where('user_id', $user->id)
-            ->today()
-            ->first();
-
-        if ($todayCheckin && is_null($todayCheckin->checkout_time)) {
-            return response()->json(['success' => false, 'message' => 'Member sudah melakukan check-in hari ini dan belum checkout.'], 400);
+        // Auto-close past checkins that were left unclosed
+        $pastUnclosedCheckins = CheckinLog::where('user_id', $user->id)
+            ->whereNull('checkout_time')
+            ->whereDate('checkin_time', '<', now()->toDateString())
+            ->get();
+            
+        foreach ($pastUnclosedCheckins as $pastLog) {
+            $pastLog->update([
+                'checkout_time' => $pastLog->checkin_time->copy()->setTime(23, 59, 59),
+                'notes' => ($pastLog->notes ? $pastLog->notes . ' | ' : '') . 'Auto checkout by system'
+            ]);
         }
 
-        if ($todayCheckin && !is_null($todayCheckin->checkout_time)) {
-            return response()->json(['success' => false, 'message' => 'Member sudah menyelesaikan sesi latihan hari ini.'], 400);
+        $latestCheckinToday = CheckinLog::where('user_id', $user->id)
+            ->today()
+            ->orderBy('checkin_time', 'desc')
+            ->first();
+
+        if ($latestCheckinToday && is_null($latestCheckinToday->checkout_time)) {
+            return response()->json(['success' => false, 'message' => 'Member belum melakukan check-out dari kunjungan sebelumnya. Harap check-out terlebih dahulu.'], 400);
         }
 
         DB::beginTransaction();
@@ -464,8 +533,8 @@ class CheckinController extends Controller
             'menu' => MenuRepository::generate($request),
         ];
 
-        // BENAR
-        return view('membership.history', compact('user', 'checkins', 'stats', 'config'));
+        // Mengarahkan langsung ke tampilan khusus histori check-in
+        return view('checkin.history', compact('user', 'checkins', 'stats', 'config'));
     }
 
     public function generateQr(Request $request)
@@ -477,15 +546,35 @@ class CheckinController extends Controller
             ->with('package')
             ->first();
 
-        if (!$activeMembership) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki membership aktif.');
-        }
-
         // Buat Manual Code statis berbasis ID User (Format: BS + 6 digit ID)
         $manualCode = 'BS' . str_pad($user->id, 6, '0', STR_PAD_LEFT);
         
         // Buat QR Data statis
         $qrData = "BUGAR_SEHAT_" . $user->id;
+
+        // Jadwal kelas hari ini & mendatang (via Booking → Schedule)
+        $upcomingBookings = \App\Models\Booking::where('user_id', $user->id)
+            ->whereHas('schedule', function ($q) {
+                $q->where('start_time', '>=', now()->startOfDay());
+            })
+            ->with(['schedule.trainer', 'schedule.service'])
+            ->orderBy(
+                \App\Models\Schedule::select('start_time')
+                    ->whereColumn('id', 'bookings.schedule_id')
+                    ->take(1)
+            )
+            ->take(5)
+            ->get();
+
+        // Sisa kuota service sessions (pending, belum dijadwalkan)
+        $quotaServices = \App\Models\ServiceTransaction::where('user_id', $user->id)
+            ->whereIn('status', ['scheduled'])
+            ->where('amount', 0) // dari bundling gratis
+            ->with(['service', 'serviceSessions' => function ($q) {
+                $q->where('status', 'pending')->whereNull('scheduled_date');
+            }])
+            ->get()
+            ->filter(fn($t) => $t->serviceSessions->count() > 0);
 
         $config = [
             'title' => 'Generate QR',
@@ -498,7 +587,9 @@ class CheckinController extends Controller
             'activeMembership',
             'qrData',
             'manualCode',
-            'config'
+            'config',
+            'upcomingBookings',
+            'quotaServices'
         ));
     }
 

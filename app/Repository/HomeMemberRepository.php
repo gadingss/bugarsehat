@@ -70,7 +70,7 @@ class HomeMemberRepository
                 ->whereHas('schedule', function ($q) {
                     $q->where('start_time', '>', now());
                 })
-                ->with(['schedule.trainer', 'schedule.package'])
+                ->with(['schedule.trainer'])
                 ->orderBy(
                     \App\Models\Schedule::select('start_time')
                         ->whereColumn('id', 'bookings.schedule_id')
@@ -139,6 +139,8 @@ class HomeMemberRepository
                 "checkinStats" => ['today' => 0, 'this_week' => 0, 'this_month' => 0, 'total' => 0],
                 "recentTransactions" => collect(),
                 "upcomingServices" => collect(),
+                "upcomingClasses" => collect(),
+                "recentProgress" => collect(),
                 "membershipWarning" => null,
                 "availablePackages" => collect(),
                 "monthlyCheckins" => [],

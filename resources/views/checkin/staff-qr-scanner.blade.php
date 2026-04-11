@@ -232,7 +232,7 @@
                 }
             });
 
-            fetch('{{ route("checkin.staff-scan-qr") }}', {
+            fetch('{{ route("checkin.qr-process") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -45,11 +45,14 @@ class AuthController extends Controller
             if ($type === 'web') {
                 $request->session()->regenerate();
 
+                // Get intended URL from session
+                $intendedUrl = $request->session()->pull('url.intended');
+
                 // redirect according to role (trainer should go to trainer dashboard)
                 if ($user->hasRole('User:Trainer')) {
                     $redirect = route('trainer.dashboard');
                 } else {
-                    $redirect = route('home');
+                    $redirect = $intendedUrl ? $intendedUrl : route('home');
                 }
 
                 return $this->successResponse('Login berhasil.', ['direct' => $redirect]);
@@ -110,12 +113,14 @@ class AuthController extends Controller
 
             $request->session()->regenerate();
 
+            $intendedUrl = $request->session()->pull('url.intended');
+
             // Return success response with redirect
             return response()->json([
                 'success' => true,
                 'message' => 'Registration successful',
                 'data' => [
-                    'direct' => route('home')
+                    'direct' => $intendedUrl ? $intendedUrl : route('home')
                 ]
             ]);
 

@@ -19,6 +19,7 @@ class MembershipPacket extends Model
         'duration_days',
         'max_visits',
         'description',
+        'product_details',
         'is_active',
         'type'
     ];
@@ -41,6 +42,12 @@ class MembershipPacket extends Model
     public function activeMemberships()
     {
         return $this->hasMany(Membership::class, 'package_id')->where('status', 'active');
+    }
+
+    public function services()
+    {
+        return $this->belongsToMany(Service::class, 'membership_packet_services', 'membership_packet_id', 'service_id')
+                    ->withTimestamps();
     }
 
     // Scopes

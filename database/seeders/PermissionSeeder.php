@@ -35,11 +35,14 @@ class PermissionSeeder extends Seeder
             ['name' => 'packet_membership.create', 'menu_id' => '6', 'label_name' => 'Create'],
             ['name' => 'packet_membership.update', 'menu_id' => '6', 'label_name' => 'Update'],
             ['name' => 'packet_membership.delete', 'menu_id' => '6', 'label_name' => 'Delete'],
+            
+            ['name' => 'master_membership', 'menu_id' => '10', 'label_name' => 'View'],
 
             ['name' => 'user_membership', 'menu_id' => '24', 'label_name' => 'View'],
             ['name' => 'user_membership.create', 'menu_id' => '24', 'label_name' => 'Create'],
             ['name' => 'user_membership.update', 'menu_id' => '24', 'label_name' => 'Update'],
             ['name' => 'user_membership.delete', 'menu_id' => '24', 'label_name' => 'Delete'],
+
 
             ['name' => 'history_membership', 'menu_id' => '8', 'label_name' => 'View'],
             ['name' => 'packet_membership.export', 'menu_id' => '8', 'label_name' => 'Export'],
@@ -105,6 +108,8 @@ class PermissionSeeder extends Seeder
             ['name' => 'checkin_report.export', 'menu_id' => '19', 'label_name' => 'Export'],
             ['name' => 'income_report', 'menu_id' => '20', 'label_name' => 'View'],
             ['name' => 'income_report.export', 'menu_id' => '20', 'label_name' => 'Export'],
+            
+            ['name' => 'owner.trainer-salary.index', 'menu_id' => '27', 'label_name' => 'View'],
 
             ['name' => 'configuration_payment', 'menu_id' => '23', 'label_name' => 'View'],
             ['name' => 'configuration_payment.create', 'menu_id' => '23', 'label_name' => 'Create'],
@@ -139,13 +144,21 @@ class PermissionSeeder extends Seeder
             ['name' => 'trainer.progress.index', 'menu_id' => '43', 'label_name' => 'Input Progress Latihan'],
             ['name' => 'trainer.members.index', 'menu_id' => '44', 'label_name' => 'Lihat Daftar Member'],
             ['name' => 'trainer.availability.index', 'menu_id' => '45', 'label_name' => 'Atur Ketersediaan Waktu'],
+            ['name' => 'trainer.salary.index', 'menu_id' => '46', 'label_name' => 'Gaji Saya'],
             ['name' => 'member.schedule.view', 'menu_id' => null, 'label_name' => 'View Member Schedules'],
             ['name' => 'member.booking.create', 'menu_id' => null, 'label_name' => 'Create Bookings'],
+            ['name' => 'member.progress.index', 'menu_id' => '30', 'label_name' => 'Progress Latihan Member'],
 
         ];
         $allMenu = [];
         foreach ($permissionList as $permission) {
-            $allMenu[] = $permission['name'];
+            if (!str_starts_with($permission['name'], 'trainer.') &&
+                !str_starts_with($permission['name'], 'member.') &&
+                !str_starts_with($permission['name'], 'membership.') &&
+                !str_starts_with($permission['name'], 'products.') &&
+                !str_starts_with($permission['name'], 'services.')) {
+                $allMenu[] = $permission['name'];
+            }
             $permission['guard_name'] = "web";
             Permission::insertOrIgnore($permission, $permission);
             $permission['guard_name'] = "api";
@@ -174,6 +187,7 @@ class PermissionSeeder extends Seeder
             'packet_membership',
             'packet_membership.create',
             'packet_membership.update',
+            'master_membership',
             'user_membership',
             'user_membership.create',
             'user_membership.update',
@@ -235,18 +249,23 @@ class PermissionSeeder extends Seeder
             'history_membership',
             'packet_membership.export',
             'activation_order',
-            'product',
-            'service',
+            'product_transaction',
             'member_transaction',
             'member_transaction.export',
             'service_transaction',
             'service_transaction.export',
+            'membership.index',
+            'products.index',
+            'services.index',
+            'products.my-products',
+            'services.my-bookings',
             'profile',
             'profile.create',
             'profile.update',
             'profile.delete',
             'member.schedule.view',
             'member.booking.create',
+            'member.progress.index',
         ];
         $trainer = [
             'home',
@@ -259,6 +278,7 @@ class PermissionSeeder extends Seeder
             'trainer.progress.index',
             'trainer.members.index',
             'trainer.availability.index',
+            'trainer.salary.index',
             'profile',
             'profile.update',
         ];
