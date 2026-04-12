@@ -29,6 +29,7 @@ class Transaction extends Model
         'validated_by',
         'status',
         'payment_proof',
+        'snap_token',
     ];
 
     protected $casts = [

@@ -41,8 +41,7 @@
         <!--begin::Wrapper-->
         <div class="d-flex flex-stack flex-wrap gap-3 fs-base fw-semibold mb-8">
             <div></div>
-            <!--begin::Link-->
-            <a href="../../demo1/dist/authentication/layouts/corporate/reset-password.html" class="link-primary">Forgot Password ?</a>
+            <a href="{{ route('password.request') }}" class="link-primary">Forgot Password ?</a>
             <!--end::Link-->
         </div>
         <!--end::Wrapper-->
@@ -63,36 +62,7 @@
         <div class="text-gray-500 text-center fw-semibold fs-6">Not a Member yet?
         <a href="{{route('register')}}" class="link-primary">Sign up</a></div>
         <!--end::Sign up-->
-        <!--begin::Heading-->
-        <!--begin::Separator-->
-        <div class="separator separator-content my-14">
-            <span class="w-125px text-gray-500 fw-semibold fs-7">Or with email</span>
-        </div>
-        <!--end::Separator-->
-        <!--begin::Login options-->
-        <div class="row g-3 mb-9">
-            <!--begin::Col-->
-            <div class="col-md-12">
-                <!--begin::Google link=-->
-                <a href="javascript:;" class="btn btn-flex btn-outline btn-text-gray-700 btn-active-color-primary bg-state-light flex-center text-nowrap w-100">
-                <img alt="Logo" src="{{ asset('metronic') }}/assets/media/svg/brand-logos/google-icon.svg" class="h-15px me-3" />Sign in with Google</a>
-                <!--end::Google link=-->
-            </div>
-            <!--end::Col-->
-            {{--
-            <!--begin::Col-->
-            <div class="col-md-6">
-                <!--begin::Google link=-->
-                <a href="javascript:;" readonly class="readonly btn btn-flex btn-outline btn-text-gray-700 btn-active-color-primary bg-state-light flex-center text-nowrap w-100">
-                <img alt="Logo" src="{{ asset('metronic') }}/assets/media/svg/brand-logos/apple-black.svg" class="theme-light-show h-15px me-3" />
-                <img alt="Logo" src="{{ asset('metronic') }}/assets/media/svg/brand-logos/apple-black-dark.svg" class="theme-dark-show h-15px me-3" />Sign in with Apple</a>
-                <!--end::Google link=-->
-            </div>
-            <!--end::Col-->
-            --}}
-        </div>
-        <!--end::Login options-->
-        <!--end::Heading-->
+
         
     </form>
     <!--end::Form-->

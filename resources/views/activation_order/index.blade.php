@@ -54,7 +54,7 @@
 
 <div class="container mt-4 custom-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3>Manajemen Aktivasi</h3>
+        <h3>{{ auth()->user()->hasRole('User:Member') ? 'Status Membership' : 'Manajemen Aktivasi' }}</h3>
         <div>
             @if(auth()->user()->hasRole('User:Member'))
                 <a href="{{ route('activation_order.extension.create') }}" class="btn btn-success">
@@ -111,9 +111,11 @@
     <form method="GET" action="{{ route('activation_order') }}" class="mb-4">
         <input type="hidden" name="tab" value="{{ $activeTab }}">
         <div class="row g-3 align-items-center">
+            @if(!auth()->user()->hasRole('User:Member'))
             <div class="col-md-3">
                 <input type="text" name="member_name" class="form-control" placeholder="Nama Member" value="{{ request('member_name') }}">
             </div>
+            @endif
             <div class="col-md-3">
                 <input type="text" name="package_name" class="form-control" placeholder="Nama Paket" value="{{ request('package_name') }}">
             </div>
@@ -150,7 +152,9 @@
         <table class="table table-striped">
             <thead>
                 <tr>
+                    @if(!auth()->user()->hasRole('User:Member'))
                     <th>Nama Member</th>
+                    @endif
                     <th>Paket Membership</th>
                     <th>Tipe</th>
                     <th>Tgl Mulai</th>
@@ -165,7 +169,9 @@
             <tbody>
                 @forelse($memberships as $membership)
                 <tr>
+                    @if(!auth()->user()->hasRole('User:Member'))
                     <td>{{ $membership->user->name }}</td>
+                    @endif
                     <td>{{ $membership->package->name }}</td>
                     <td><span class="badge badge-type @if($membership->type == 'application') bg-info @elseif($membership->type == 'extension') bg-warning @else bg-secondary @endif">{{ ucfirst($membership->type) }}</span></td>
                     <td>{{ $membership->start_date ? \Carbon\Carbon::parse($membership->start_date)->format('d M Y') : '-' }}</td>
@@ -195,6 +201,12 @@
                         {{--               TOMBOL AKSI CRUD                --}}
                         {{-- ============================================= --}}
                         <div class="btn-group-actions">
+                            @if(auth()->user()->hasRole('User:Member'))
+                                @if($membership->transaction && $membership->transaction->status == 'pending' && $membership->transaction->snap_token)
+                                    <a href="{{ route('activation_order.payment', $membership->transaction->id) }}" class="btn btn-sm btn-primary" title="Bayar Sekarang"><i class="fas fa-credit-card"></i> Bayar Sekarang</a>
+                                @endif
+                            @endif
+
                             @if(auth()->user()->hasRole(['User:Staff', 'User:Owner']))
                                 {{-- Tombol Validasi Pembayaran --}}
                                 @if($membership->transaction && $membership->transaction->status == 'pending')

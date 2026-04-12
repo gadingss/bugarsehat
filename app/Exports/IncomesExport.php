@@ -24,8 +24,55 @@ class IncomesExport implements FromView, ShouldAutoSize
     */
     public function view(): View
     {
-        // Fetch data based on the provided date range
-        $incomes = Income::whereBetween('created_at', [$this->startDate . ' 00:00:00', $this->endDate . ' 23:59:59'])->get();
+        $start = $this->startDate . ' 00:00:00';
+        $end = $this->endDate . ' 23:59:59';
+
+        // 1. Transactions (Membership / Product Purchase)
+        $transactions = \App\Models\Transaction::with(['product'])
+            ->whereBetween('transaction_date', [$start, $end])
+            ->where('status', 'validated')
+            ->get()
+            ->map(function ($item) {
+                $description = 'Pembelian ' . ($item->product->name ?? 'Produk');
+                if ($item->invoice_id) {
+                    $description .= ' (#' . $item->invoice_id . ')';
+                }
+                return (object) [
+                    'created_at' => $item->transaction_date,
+                    'description' => $description,
+                    'amount' => $item->amount,
+                ];
+            });
+
+        // 2. Service Transactions (Trainer)
+        $serviceTransactions = \App\Models\ServiceTransaction::with(['service'])
+            ->whereBetween('transaction_date', [$start, $end])
+            ->whereIn('status', ['scheduled', 'completed'])
+            ->get()
+            ->map(function ($item) {
+                return (object) [
+                    'created_at' => $item->transaction_date,
+                    'description' => 'Layanan ' . ($item->service->name ?? 'Trainer'),
+                    'amount' => $item->amount,
+                ];
+            });
+
+        // 3. Manual Incomes
+        $manualIncomes = \App\Models\Income::whereBetween('created_at', [$start, $end])
+            ->get()
+            ->map(function ($item) {
+                return (object) [
+                    'created_at' => $item->created_at,
+                    'description' => $item->description,
+                    'amount' => $item->amount,
+                ];
+            });
+
+        // Combine and Sort
+        $incomes = $transactions->concat($serviceTransactions)
+            ->concat($manualIncomes)
+            ->sortByDesc('created_at');
+
         $totalIncome = $incomes->sum('amount');
 
         // Pass the data to a dedicated Blade view for the Excel sheet

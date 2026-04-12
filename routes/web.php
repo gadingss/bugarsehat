@@ -48,6 +48,14 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [LoginController::class, 'register'])->name('register');
     Route::post('/register', [AuthController::class, 'register'])->name('register.post');
     Route::post('/login', [AuthController::class, 'login'])->name('web.login');
+
+    // Forgot Password OTP Routes
+    Route::get('/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+    Route::post('/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendOtp'])->name('password.otp.send');
+    Route::get('/verify-otp', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'showOtpVerifyForm'])->name('password.otp.verify');
+    Route::post('/verify-otp', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'verifyOtp'])->name('password.otp.submit');
+    Route::get('/reset-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'showResetPasswordForm'])->name('password.reset.form');
+    Route::post('/reset-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'resetPassword'])->name('password.reset.submit');
 });
 
 // midtrans notification callback (no auth because it comes from external service)
@@ -220,6 +228,7 @@ Route::middleware('auth:web')->group(function () {
     Route::get('/activation_order', [ActivationOrderController::class, 'index'])->name('activation_order')->middleware(['can:activation_order']);
     Route::post('/activation_order/{membershipId}/validate_payment', [ActivationOrderController::class, 'validatePayment'])->name('activation_order.validate_payment')->middleware(['can:activation_order']);
     Route::post('/activation_order/{membershipId}/activate_membership', [ActivationOrderController::class, 'activateMembership'])->name('activation_order.activate_membership')->middleware(['can:activation_order']);
+    Route::get('/activation_order/payment/{transactionId}', [ActivationOrderController::class, 'payment'])->name('activation_order.payment')->middleware(['can:activation_order']);
 
     // New routes for membership extension and application
     Route::get('/activation_order/extension/create', [ActivationOrderController::class, 'createExtension'])->name('activation_order.extension.create')->middleware(['can:activation_order']);

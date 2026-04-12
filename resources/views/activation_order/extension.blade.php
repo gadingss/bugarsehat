@@ -38,15 +38,20 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
-                        <label for="user_id" class="form-label">Pilih Member <span class="text-danger">*</span></label>
-                        <select class="form-select @error('user_id') is-invalid @enderror" id="user_id" name="user_id" required>
-                            <option value="">-- Pilih Member --</option>
-                            @foreach($members as $member)
-                                <option value="{{ $member->id }}" {{ old('user_id') == $member->id ? 'selected' : '' }}>
-                                    {{ $member->name }} - {{ $member->email }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <label for="user_id" class="form-label">Member <span class="text-danger">*</span></label>
+                        @if(auth()->user()->hasRole('User:Member'))
+                            <input type="text" class="form-control" value="{{ auth()->user()->name }}" readonly>
+                            <input type="hidden" name="user_id" value="{{ auth()->user()->id }}">
+                        @else
+                            <select class="form-select @error('user_id') is-invalid @enderror" id="user_id" name="user_id" required>
+                                <option value="">-- Pilih Member --</option>
+                                @foreach($members as $member)
+                                    <option value="{{ $member->id }}" {{ old('user_id') == $member->id ? 'selected' : '' }}>
+                                        {{ $member->name }} - {{ $member->email }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endif
                         @error('user_id')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -96,12 +101,18 @@
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label for="payment_method" class="form-label">Metode Pembayaran <span class="text-danger">*</span></label>
-                        <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method" required>
-                            <option value="">-- Pilih Metode --</option>
-                            <option value="transfer" {{ old('payment_method') == 'transfer' ? 'selected' : '' }}>Transfer Bank</option>
-                            <option value="cash" {{ old('payment_method') == 'cash' ? 'selected' : '' }}>Tunai</option>
-                            <option value="qris" {{ old('payment_method') == 'qris' ? 'selected' : '' }}>QRIS</option>
-                        </select>
+                        @if(auth()->user()->hasRole('User:Member'))
+                            <input type="text" class="form-control" value="Online Payment (Midtrans)" readonly>
+                            <input type="hidden" name="payment_method" value="midtrans">
+                        @else
+                            <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method" required>
+                                <option value="">-- Pilih Metode --</option>
+                                <option value="transfer" {{ old('payment_method') == 'transfer' ? 'selected' : '' }}>Transfer Bank</option>
+                                <option value="cash" {{ old('payment_method') == 'cash' ? 'selected' : '' }}>Tunai</option>
+                                <option value="qris" {{ old('payment_method') == 'qris' ? 'selected' : '' }}>QRIS</option>
+                                <option value="midtrans" {{ old('payment_method') == 'midtrans' ? 'selected' : '' }}>Midtrans</option>
+                            </select>
+                        @endif
                         @error('payment_method')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

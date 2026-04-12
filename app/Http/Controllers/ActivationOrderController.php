@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
+use Midtrans\Snap;
+use Midtrans\Config;
 
 class ActivationOrderController extends Controller
 {
@@ -23,9 +26,10 @@ class ActivationOrderController extends Controller
      */
     public function index(Request $request)
     {
+        $isMember = Auth::user()->hasRole('User:Member');
         $config = [
-            'title' => 'Activation Management',
-            'title-alias' => 'Manajemen Aktivasi',
+            'title' => $isMember ? 'Membership Status' : 'Activation Management',
+            'title-alias' => $isMember ? 'Status Membership' : 'Manajemen Aktivasi',
             'menu' => MenuRepository::generate($request),
         ];
 
@@ -129,8 +133,16 @@ class ActivationOrderController extends Controller
             'menu' => MenuRepository::generate($request),
         ];
 
+        $user = Auth::user();
+        $isMember = $user->hasRole('User:Member');
+        
         $packages = MembershipPacket::where('type', 'paket')->where('is_active', true)->get();
-        $members = User::whereDoesntHave('memberships', fn($q) => $q->where('status', 'active')->where('end_date', '>=', now()))->get();
+        
+        if ($isMember) {
+            $members = collect([$user]);
+        } else {
+            $members = User::whereDoesntHave('memberships', fn($q) => $q->where('status', 'active')->where('end_date', '>=', now()))->get();
+        }
 
         return view('activation_order.application', compact('config', 'packages', 'members'));
     }
@@ -140,6 +152,10 @@ class ActivationOrderController extends Controller
      */
     public function storeApplication(Request $request)
     {
+        $userId = Auth::user()->hasRole('User:Member') ? Auth::id() : $request->user_id;
+
+        $request->merge(['user_id' => $userId]);
+
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'package_id' => 'required|exists:membership_packages,id',
@@ -155,7 +171,8 @@ class ActivationOrderController extends Controller
         DB::beginTransaction();
         try {
             $transaction = Transaction::create([
-                'user_id' => $request->user_id,
+                'invoice_id' => 'INV-ACT-' . time() . Str::upper(Str::random(3)),
+                'user_id' => $userId,
                 'product_id' => $package->id,
                 'product_type' => MembershipPacket::class,
                 'transaction_date' => now(),
@@ -164,8 +181,8 @@ class ActivationOrderController extends Controller
                 'quantity' => 1,
             ]);
 
-            Membership::create([
-                'user_id' => $request->user_id,
+            $membership = Membership::create([
+                'user_id' => $userId,
                 'package_id' => $package->id,
                 'transaction_id' => $transaction->id,
                 'type' => 'application',
@@ -174,6 +191,32 @@ class ActivationOrderController extends Controller
                 'remaining_visits' => $package->max_visits,
                 'status' => 'pending',
             ]);
+
+            // Midtrans Logic for Members
+            if (Auth::user()->hasRole('User:Member')) {
+                Config::$serverKey = config('midtrans.server_key');
+                Config::$isProduction = config('midtrans.is_production');
+                Config::$isSanitized = config('midtrans.is_sanitized');
+                Config::$is3ds = config('midtrans.is_3ds');
+
+                $params = [
+                    'transaction_details' => [
+                        'order_id' => $transaction->invoice_id,
+                        'gross_amount' => (int) $transaction->amount,
+                    ],
+                    'customer_details' => [
+                        'first_name' => Auth::user()->name,
+                        'email' => Auth::user()->email,
+                        'phone' => Auth::user()->phone,
+                    ],
+                ];
+
+                $snapToken = Snap::getSnapToken($params);
+                $transaction->update(['snap_token' => $snapToken]);
+
+                DB::commit();
+                return redirect()->route('activation_order.payment', $transaction->id);
+            }
 
             DB::commit();
             return redirect()->route('activation_order', ['tab' => 'application'])->with('success', 'Pengajuan membership berhasil dibuat.');
@@ -194,7 +237,14 @@ class ActivationOrderController extends Controller
             'menu' => MenuRepository::generate($request),
         ];
 
-        $members = User::whereHas('memberships', fn($q) => $q->where('status', 'active')->where('end_date', '>=', now()))->get();
+        $user = Auth::user();
+        $isMember = $user->hasRole('User:Member');
+
+        if ($isMember) {
+            $members = collect([$user]);
+        } else {
+            $members = User::whereHas('memberships', fn($q) => $q->where('status', 'active')->where('end_date', '>=', now()))->get();
+        }
         $packages = MembershipPacket::where('type', 'paket')->where('is_active', true)->get();
 
         return view('activation_order.extension', compact('config', 'members', 'packages'));
@@ -205,6 +255,10 @@ class ActivationOrderController extends Controller
      */
     public function storeExtension(Request $request)
     {
+        $userId = Auth::user()->hasRole('User:Member') ? Auth::id() : $request->user_id;
+        
+        $request->merge(['user_id' => $userId]);
+
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'package_id' => 'required|exists:membership_packages,id',
@@ -220,7 +274,8 @@ class ActivationOrderController extends Controller
         DB::beginTransaction();
         try {
             $transaction = Transaction::create([
-                'user_id' => $request->user_id,
+                'invoice_id' => 'INV-EXT-' . time() . Str::upper(Str::random(3)),
+                'user_id' => $userId,
                 'product_id' => $package->id,
                 'product_type' => MembershipPacket::class,
                 'transaction_date' => now(),
@@ -230,8 +285,8 @@ class ActivationOrderController extends Controller
             ]);
 
             $startDate = Carbon::parse($activeMembership->end_date)->addDay();
-            Membership::create([
-                'user_id' => $request->user_id,
+            $membership = Membership::create([
+                'user_id' => $userId,
                 'package_id' => $package->id,
                 'transaction_id' => $transaction->id,
                 'type' => 'extension',
@@ -240,6 +295,32 @@ class ActivationOrderController extends Controller
                 'remaining_visits' => $package->max_visits,
                 'status' => 'inactive',
             ]);
+
+            // Midtrans Logic for Members
+            if (Auth::user()->hasRole('User:Member')) {
+                Config::$serverKey = config('midtrans.server_key');
+                Config::$isProduction = config('midtrans.is_production');
+                Config::$isSanitized = config('midtrans.is_sanitized');
+                Config::$is3ds = config('midtrans.is_3ds');
+
+                $params = [
+                    'transaction_details' => [
+                        'order_id' => $transaction->invoice_id,
+                        'gross_amount' => (int) $transaction->amount,
+                    ],
+                    'customer_details' => [
+                        'first_name' => Auth::user()->name,
+                        'email' => Auth::user()->email,
+                        'phone' => Auth::user()->phone,
+                    ],
+                ];
+
+                $snapToken = Snap::getSnapToken($params);
+                $transaction->update(['snap_token' => $snapToken]);
+
+                DB::commit();
+                return redirect()->route('activation_order.payment', $transaction->id);
+            }
 
             DB::commit();
             return redirect()->route('activation_order', ['tab' => 'extension'])->with('success', 'Perpanjangan membership berhasil dibuat.');
@@ -412,5 +493,31 @@ class ActivationOrderController extends Controller
             DB::rollback();
             return redirect()->back()->with('error', 'Gagal menghapus membership: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Tampilkan halaman pembayaran Midtrans.
+     */
+    public function payment($transactionId)
+    {
+        $transaction = Transaction::findOrFail($transactionId);
+        
+        // Proteksi: Hanya pemilik transaksi yang bisa akses
+        if (Auth::id() !== $transaction->user_id) {
+            abort(403);
+        }
+
+        $config = [
+            'title' => 'Pembayaran Membership',
+            'title-alias' => 'Checkout',
+            'menu' => MenuRepository::generate(request()),
+        ];
+
+        // Midtrans Config untuk View
+        $isProduction = config('midtrans.is_production');
+        $snapUrl = $isProduction ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js';
+        $clientKey = config('midtrans.client_key');
+
+        return view('activation_order.payment', compact('config', 'transaction', 'snapUrl', 'clientKey'));
     }
 }
