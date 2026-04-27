@@ -62,37 +62,9 @@
                                             id="pay-button">
                                             <i class="fas fa-wallet me-2"></i>Bayar dengan Midtrans
                                         </button>
-                                        <div class="separator separator-content border-gray-300 my-8">
-                                            <span class="w-100px fw-bold text-muted fs-8">ATAU MANUAL</span>
-                                        </div>
                                     </div>
                                 @endif
 
-                                <div class="alert alert-info py-3 px-4 mb-5">
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="fas fa-university me-2 text-info"></i>
-                                        <h6 class="fw-bold mb-0">Transfer Bank Manual</h6>
-                                    </div>
-                                    <div class="p-2 rounded bg-white bg-opacity-50 fs-7">
-                                        <div>Bank: <strong>BCA</strong></div>
-                                        <div>No. Rekening: <strong>1234567890</strong></div>
-                                        <div>Atas Nama: <strong>Bugar Sehat Gym</strong></div>
-                                    </div>
-                                </div>
-
-                                <form action="{{ route('products.confirm-payment', $transaction->id) }}" method="POST"
-                                    enctype="multipart/form-data">
-                                    @csrf
-                                    <div class="mb-4">
-                                        <label class="form-label fw-semibold">Upload Bukti Transfer Manual</label>
-                                        <input type="file" class="form-control" name="payment_proof" accept="image/*,.pdf"
-                                            required>
-                                        <div class="form-text fs-8 text-muted">Format: JPG, PNG, PDF (Max 2MB)</div>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary w-100 shadow-sm">
-                                        <i class="fas fa-check-circle me-2"></i>Kirim Bukti Pembayaran
-                                    </button>
-                                </form>
                             </div>
                         </div>
                     </div>

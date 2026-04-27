@@ -90,21 +90,7 @@
                                 </div>
 
                                 <div class="row g-5">
-                                    <div class="col-md-6">
-                                        <div class="bg-light-primary rounded p-5">
-                                            <h5 class="fw-bold text-primary mb-3">Transfer Bank</h5>
-                                            <div class="mb-3">
-                                                <div class="fw-semibold">Bank BCA</div>
-                                                <div class="text-gray-600">1234567890</div>
-                                                <div class="text-gray-600">a.n. Bugar Sehat Gym</div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <div class="fw-semibold">Bank Mandiri</div>
-                                                <div class="text-gray-600">0987654321</div>
-                                                <div class="text-gray-600">a.n. Bugar Sehat Gym</div>
-                                            </div>
-                                        </div>
-                                    </div>
+
                                     <div class="col-md-6">
                                         <div class="bg-light-success rounded p-5">
                                             <h5 class="fw-bold text-success mb-3">Pembayaran Tunai</h5>

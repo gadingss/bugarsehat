@@ -12,7 +12,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <h5 class="fw-bold mb-3">Detail Produk</h5>
                             <div class="d-flex align-items-center mb-3">
                                 <div class="symbol symbol-60px symbol-circle me-4">
@@ -44,18 +44,7 @@
                 </tr>
             </table>
                         </div>
-                        <div class="col-md-6">
-                            <h5 class="fw-bold mb-3">Informasi Pembayaran</h5>
-                            <div class="alert alert-info">
-                <h6 class="fw-bold">Informasi Pembayaran</h6>
-                <p class="mb-2">Silakan transfer ke rekening berikut:</p>
-                <div class="bg-light p-3 rounded">
-                    <strong>Bank: BCA</strong><br>
-                    <strong>No. Rekening: 1234567890</strong><br>
-                <strong>Atas Nama: Bugar Sehat Gym</strong>
-                </div>
-            </div>
-                        </div>
+
                     </div>
                 </div>
                 <div class="card-footer">

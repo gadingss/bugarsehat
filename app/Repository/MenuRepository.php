@@ -45,6 +45,22 @@ class MenuRepository
                 unset($result[$key]);
                 continue;
             }
+
+            // Hapus menu role_assignment khusus untuk Owner
+            if (isset($item['url']) && $item['url'] === 'role_assignment') {
+                if ($user->hasRole('User:Owner')) {
+                    unset($result[$key]);
+                    continue;
+                }
+            }
+
+            // Hapus menu monitor-trainer dan availability untuk Trainer dan Member
+            if (isset($item['url']) && in_array($item['url'], ['staff.monitor-trainer.index', 'trainer.availability.index'])) {
+                if ($user->hasRole('User:Trainer') || $user->hasRole('User:Member')) {
+                    unset($result[$key]);
+                    continue;
+                }
+            }
             // =================================================================
             // AKHIR BLOK PERBAIKAN
             // =================================================================

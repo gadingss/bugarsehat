@@ -410,7 +410,7 @@ class ProductController extends Controller
     }
 
 
-    public function myProducts()
+    public function myProducts(Request $request)
     {
         $user = Auth::user();
         $activeMembership = Membership::where('user_id', $user->id)
@@ -430,7 +430,14 @@ class ProductController extends Controller
             ->orderBy('transaction_date', 'desc')
             ->paginate(10);
 
+        $config = [
+            'title' => 'Produk Saya',
+            'title-alias' => 'Produk Saya',
+            'menu' => MenuRepository::generate($request),
+        ];
+
         return view('products.my-products', compact(
+            'config',
             'user',
             'activeMembership',
             'membershipProducts',

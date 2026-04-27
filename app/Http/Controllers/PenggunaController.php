@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Hash;
 class PenggunaController extends Controller
 {
     /**
-     * Menampilkan daftar pengguna (Owner & Staff).
+     * Menampilkan daftar pengguna (Owner ).
      */
     public function index(Request $request)
     {

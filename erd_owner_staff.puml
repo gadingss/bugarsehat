@@ -1,0 +1,170 @@
+@startuml ERD_Owner_Staff
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam classFontSize 11
+skinparam dpi 150
+top to bottom direction
+
+entity "users" as users {
+  * id : bigint <<PK>>
+  --
+  name : string
+  email : string <<UK>>
+  role : enum
+  phone : string
+}
+
+entity "products" as products {
+  * id : bigint <<PK>>
+  --
+  name : string
+  price : decimal
+  stock : int
+  status : enum
+  user_id : bigint <<FK>>
+}
+
+entity "product_details" as product_details {
+  * id : bigint <<PK>>
+  --
+  product_id : bigint <<FK>>
+  photo_path : string
+}
+
+entity "services" as services {
+  * id : bigint <<PK>>
+  --
+  name : string
+  price : decimal
+  duration_minutes : int
+  is_active : boolean
+  user_id : bigint <<FK>>
+}
+
+entity "packages" as packages {
+  * id : bigint <<PK>>
+  --
+  name : string
+  price : decimal
+  duration_days : int
+  max_visits : int
+  type : enum
+}
+
+entity "packet_services" as packet_services {
+  * id : bigint <<PK>>
+  --
+  packet_id : bigint <<FK>>
+  service_id : bigint <<FK>>
+}
+
+entity "memberships" as memberships {
+  * id : bigint <<PK>>
+  --
+  user_id : bigint <<FK>>
+  package_id : bigint <<FK>>
+  type : enum
+  start_date : date
+  end_date : date
+  status : enum
+}
+
+entity "transactions" as transactions {
+  * id : bigint <<PK>>
+  --
+  user_id : bigint <<FK>>
+  product_id : bigint <<FK>>
+  amount : decimal
+  status : enum
+  type : enum
+  snap_token : string
+}
+
+entity "svc_transactions" as svc_transactions {
+  * id : bigint <<PK>>
+  --
+  user_id : bigint <<FK>>
+  service_id : bigint <<FK>>
+  amount : decimal
+  status : enum
+  trainer_id : bigint <<FK>>
+}
+
+entity "checkin_logs" as checkin_logs {
+  * id : bigint <<PK>>
+  --
+  user_id : bigint <<FK>>
+  membership_id : bigint <<FK>>
+  checkin_time : timestamp
+  scanned_by : bigint <<FK>>
+}
+
+entity "reports" as reports {
+  * id : bigint <<PK>>
+  --
+  report_type : enum
+  generated_by : bigint <<FK>>
+  period_start : date
+  period_end : date
+}
+
+entity "incomes" as incomes {
+  * id : bigint <<PK>>
+  --
+  description : string
+  amount : int
+}
+
+entity "config_payments" as config_payments {
+  * id : bigint <<PK>>
+  --
+  metode : string
+  rekening : string
+  atas_nama : string
+}
+
+entity "menus" as menus {
+  * id : bigint <<PK>>
+  --
+  name : string
+  url : string
+  type : string
+}
+
+entity "berita" as berita {
+  * id : bigint <<PK>>
+  --
+  title : string
+  type : string
+}
+
+entity "gallery" as gallery {
+  * id : bigint <<PK>>
+  --
+  title : string
+  image : string
+}
+
+entity "landing_page" as landing_page {
+  * id : bigint <<PK>>
+  --
+  title : string
+  photo_path : string
+}
+
+users ||--o{ products : "manages"
+products ||--o{ product_details : "has"
+users ||--o{ services : "manages"
+packages ||--o{ packet_services : "includes"
+services ||--o{ packet_services : "in"
+packages ||--o{ memberships : "defines"
+users ||--o{ memberships : "has"
+users ||--o{ transactions : "makes"
+products ||--o{ transactions : "sold"
+users ||--o{ svc_transactions : "buys"
+services ||--o{ svc_transactions : "booked"
+users ||--o{ checkin_logs : "checkin"
+memberships ||--o{ checkin_logs : "linked"
+users ||--o{ reports : "generates"
+
+@enduml

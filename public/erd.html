@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERD - Bugar Sehat</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 1px solid #334155; padding: 24px 40px; }
+        .header h1 { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header p { color: #94a3b8; font-size: 14px; margin-top: 4px; }
+        .tabs { display: flex; gap: 8px; padding: 20px 40px 0; background: #0f172a; overflow-x: auto; scrollbar-width: none; }
+        .tab { padding: 12px 24px; border-radius: 12px 12px 0 0; border: 1px solid #334155; border-bottom: none; background: #1e293b; color: #94a3b8; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; white-space: nowrap; }
+        .tab:hover { color: #e2e8f0; background: #263550; }
+        .tab.active { background: #1e293b; color: #38bdf8; border-color: #38bdf8; border-bottom: 2px solid #1e293b; position: relative; z-index: 2; }
+        .content { background: #1e293b; border: 1px solid #334155; border-radius: 0 12px 12px 12px; margin: 0 40px 40px; padding: 32px; position: relative; z-index: 1; min-height: 500px; }
+        .diagram-container { display: none; }
+        .diagram-container.active { display: block; }
+        .diagram-wrapper { background: #ffffff; border-radius: 12px; padding: 40px; overflow-x: auto; display: flex; justify-content: center; border: 1px solid #e2e8f0; }
+        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; justify-content: flex-end; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; }
+        .btn-primary:hover { box-shadow: 0 4px 12px rgba(59,130,246,0.4); }
+        .btn svg { width: 16px; height: 16px; }
+        .toast { position: fixed; bottom: 30px; right: 30px; background: #10b981; color: white; padding: 14px 24px; border-radius: 10px; font-size: 14px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,0.3); transform: translateY(100px); opacity: 0; transition: all 0.3s ease; z-index: 999; }
+        .toast.show { transform: translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div>
+        <h1>📊 ERD - Bugar Sehat (Sederhana)</h1>
+        <p>Diagram dipecah menjadi modul-modul kecil agar lebih mudah dibaca dan tidak terlalu lebar (compact).</p>
+    </div>
+</div>
+
+<div class="tabs">
+    <div class="tab active" onclick="switchTab('erd-master', this)">🏢 Master Data</div>
+    <div class="tab" onclick="switchTab('erd-membership', this)">💳 Membership & Produk</div>
+    <div class="tab" onclick="switchTab('erd-trainer', this)">🏋️ Jadwal & Trainer</div>
+    <div class="tab" onclick="switchTab('erd-transaksi', this)">💸 Transaksi</div>
+    <div class="tab" onclick="switchTab('erd-aktivitas', this)">🏃 Aktivitas & Logs</div>
+</div>
+
+<div class="content">
+
+    <div id="erd-master" class="diagram-container active">
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="downloadPNG('erd-master-wrapper', 'ERD_MasterData')">Unduh PNG</button>
+        </div>
+        <div class="diagram-wrapper" id="erd-master-wrapper">
+            <div id="erd-master-diagram"></div>
+        </div>
+    </div>
+
+    <div id="erd-membership" class="diagram-container">
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="downloadPNG('erd-membership-wrapper', 'ERD_Membership')">Unduh PNG</button>
+        </div>
+        <div class="diagram-wrapper" id="erd-membership-wrapper">
+            <div id="erd-membership-diagram"></div>
+        </div>
+    </div>
+
+    <div id="erd-trainer" class="diagram-container">
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="downloadPNG('erd-trainer-wrapper', 'ERD_Trainer')">Unduh PNG</button>
+        </div>
+        <div class="diagram-wrapper" id="erd-trainer-wrapper">
+            <div id="erd-trainer-diagram"></div>
+        </div>
+    </div>
+
+    <div id="erd-transaksi" class="diagram-container">
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="downloadPNG('erd-transaksi-wrapper', 'ERD_Transaksi')">Unduh PNG</button>
+        </div>
+        <div class="diagram-wrapper" id="erd-transaksi-wrapper">
+            <div id="erd-transaksi-diagram"></div>
+        </div>
+    </div>
+
+    <div id="erd-aktivitas" class="diagram-container">
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="downloadPNG('erd-aktivitas-wrapper', 'ERD_Aktivitas')">Unduh PNG</button>
+        </div>
+        <div class="diagram-wrapper" id="erd-aktivitas-wrapper">
+            <div id="erd-aktivitas-diagram"></div>
+        </div>
+    </div>
+
+</div>
+
+<div class="toast" id="toast">✅ Berhasil didownload!</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#ffffff',
+            primaryBorderColor: '#000000',
+            primaryTextColor: '#000000',
+            lineColor: '#000000',
+            fontFamily: 'Inter, sans-serif'
+        },
+        er: {
+            diagramPadding: 20,
+            layoutDirection: 'TB',
+            minEntityWidth: 100,
+            minEntityHeight: 40,
+            entityPadding: 16,
+            fontSize: 12
+        }
+    });
+
+    const diagramsParams = {
+        'erd-master': `erDiagram
+            users {
+                bigint id PK
+                string name
+                string email UK
+                enum role
+            }
+            products {
+                bigint id PK
+                string name
+                decimal price
+                int stock
+            }
+            product_details {
+                bigint id PK
+                bigint product_id FK
+                string photo_path
+            }
+            services {
+                bigint id PK
+                string name
+                decimal price
+                int duration_minutes
+            }
+            users ||--o{ products : "manages"
+            products ||--o{ product_details : "has"
+            users ||--o{ services : "manages"`,
+            
+        'erd-membership': `erDiagram
+            users {
+                bigint id PK
+                string name
+            }
+            packages {
+                bigint id PK
+                string name
+                decimal price
+                int duration_days
+            }
+            memberships {
+                bigint id PK
+                bigint user_id FK
+                bigint package_id FK
+                enum status
+                date end_date
+            }
+            mbr_products {
+                bigint id PK
+                bigint membership_id FK
+                bigint product_id FK
+                int quantity
+            }
+            products {
+                bigint id PK
+                string name
+            }
+            packages ||--o{ memberships : "defines"
+            users ||--o{ memberships : "owns"
+            memberships ||--o{ mbr_products : "includes"
+            products ||--o{ mbr_products : "is_item"`,
+
+        'erd-trainer': `erDiagram
+            users {
+                bigint id PK
+                string name
+            }
+            trainer_members {
+                bigint id PK
+                bigint trainer_id FK
+                bigint member_id FK
+            }
+            schedules {
+                bigint id PK
+                bigint trainer_id FK
+                bigint service_id FK
+                string start_time
+                int capacity
+            }
+            availability {
+                bigint id PK
+                bigint trainer_id FK
+                string day_of_week
+                string start_time
+            }
+            bookings {
+                bigint id PK
+                bigint user_id FK
+                bigint schedule_id FK
+                enum status
+            }
+            users ||--o{ trainer_members : "assigns"
+            users ||--o{ schedules : "creates"
+            users ||--o{ availability : "sets"
+            schedules ||--o{ bookings : "receives"
+            users ||--o{ bookings : "makes"`,
+
+        'erd-transaksi': `erDiagram
+            users {
+                bigint id PK
+                string name
+            }
+            transactions {
+                bigint id PK
+                bigint user_id FK
+                decimal amount
+                enum status
+                enum type
+            }
+            svc_transactions {
+                bigint id PK
+                bigint user_id FK
+                bigint service_id FK
+                decimal amount
+                enum status
+            }
+            incomes {
+                bigint id PK
+                string description
+                int amount
+            }
+            users ||--o{ transactions : "makes_tx"
+            users ||--o{ svc_transactions : "buys_service"`,
+
+        'erd-aktivitas': `erDiagram
+            users {
+                bigint id PK
+                string name
+            }
+            checkin_logs {
+                bigint id PK
+                bigint user_id FK
+                timestamp checkin_time
+            }
+            checkin_codes {
+                bigint id PK
+                bigint user_id FK
+                string code UK
+                timestamp expires_at
+            }
+            progress {
+                bigint id PK
+                bigint trainer_id FK
+                bigint member_id FK
+                date date
+                text progress_note
+            }
+            reports {
+                bigint id PK
+                enum report_type
+                date period_start
+            }
+            users ||--o{ checkin_logs : "records"
+            users ||--o{ checkin_codes : "generates"
+            users ||--o{ progress : "has_progress"
+            users ||--o{ reports : "generates"`
+    };
+
+    const rendered = { 'erd-master': false, 'erd-membership': false, 'erd-trainer': false, 'erd-transaksi': false, 'erd-aktivitas': false };
+
+    async function renderDiagram(id) {
+        try {
+            const code = diagramsParams[id];
+            const uniqueId = 'mermaid-' + id + '-' + Date.now();
+            const { svg } = await mermaid.render(uniqueId, code);
+            const el = document.getElementById(id + '-diagram');
+            el.innerHTML = svg;
+            const svgEl = el.querySelector('svg');
+            if (svgEl) {
+                // Hapus max-width auto agar tidak terlalu stretched, biarkan compact
+                svgEl.removeAttribute('style');
+                svgEl.style.maxWidth = '100%';
+            }
+        } catch (e) {
+            console.error('Mermaid render error for ' + id + ':', e);
+            document.getElementById(id + '-diagram').innerHTML = '<p style="color:red;padding:20px;">Gagal merender diagram. Cek konsol.</p>';
+        }
+    }
+
+    // Initial render
+    renderDiagram('erd-master');
+    rendered['erd-master'] = true;
+
+    function switchTab(tabId, el) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.diagram-container').forEach(d => d.classList.remove('active'));
+
+        document.getElementById(tabId).classList.add('active');
+        el.classList.add('active');
+
+        if (!rendered[tabId]) {
+            rendered[tabId] = true;
+            setTimeout(() => renderDiagram(tabId), 100);
+        }
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg || '✅ Berhasil didownload!';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    function downloadPNG(wrapperId, filename) {
+        const wrapper = document.getElementById(wrapperId);
+        const svg = wrapper.querySelector('svg');
+        if (!svg) { showToast('❌ Diagram belum siap'); return; }
+
+        const w = parseInt(svg.getAttribute('width') || svg.getBoundingClientRect().width);
+        const h = parseInt(svg.getAttribute('height') || svg.getBoundingClientRect().height);
+
+        const svgClone = svg.cloneNode(true);
+        svgClone.setAttribute('width', w + 40); // add padding
+        svgClone.setAttribute('height', h + 40);
+        svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+        // Center diagram inside bounding box with padding
+        const g = svgClone.querySelector('g') || svgClone.firstElementChild;
+        if (g) {
+            svgClone.innerHTML = '';
+            const newG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            newG.setAttribute('transform', 'translate(20, 20)');
+            newG.appendChild(g.cloneNode(true));
+            svgClone.appendChild(newG);
+        }
+
+        // Add white background
+        const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%'); bg.setAttribute('fill', 'white');
+        svgClone.insertBefore(bg, svgClone.firstChild);
+
+        const svgData = new XMLSerializer().serializeToString(svgClone);
+        const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgData);
+
+        const img = new Image();
+        img.onload = function() {
+            const scale = 2; // high res
+            const canvas = document.createElement('canvas');
+            canvas.width = (w + 40) * scale;
+            canvas.height = (h + 40) * scale;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            const link = document.createElement('a');
+            link.download = filename + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('✅ ' + filename + '.png berhasil didownload!');
+        };
+        img.src = url;
+    }
+</script>
+</body>
+</html>

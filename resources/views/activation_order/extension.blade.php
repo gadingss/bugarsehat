@@ -107,7 +107,7 @@
                         @else
                             <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method" required>
                                 <option value="">-- Pilih Metode --</option>
-                                <option value="transfer" {{ old('payment_method') == 'transfer' ? 'selected' : '' }}>Transfer Bank</option>
+
                                 <option value="cash" {{ old('payment_method') == 'cash' ? 'selected' : '' }}>Tunai</option>
                                 <option value="qris" {{ old('payment_method') == 'qris' ? 'selected' : '' }}>QRIS</option>
                                 <option value="midtrans" {{ old('payment_method') == 'midtrans' ? 'selected' : '' }}>Midtrans</option>
