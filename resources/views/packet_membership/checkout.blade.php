@@ -117,28 +117,9 @@
                                         <label class="required fw-semibold fs-6 mb-5">Pilih Metode Pembayaran</label>
                                         
                                         <div class="row g-5">
-                                            <!--begin::Cash Option-->
-                                            <div class="col-6 col-lg-3">
-                                                <input type="radio" class="btn-check" name="payment_method" value="cash" id="payment_cash" required checked>
-                                                <label class="btn btn-outline btn-outline-dashed btn-active-light-primary p-7 d-flex align-items-center" for="payment_cash">
-                                                    <span class="svg-icon svg-icon-3x me-5">
-                                                        {{-- Icon untuk Cash --}}
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                                            <path opacity="0.3" d="M10.3 14.3L11 13.6L7.70001 10.3C7.30001 9.9 6.7 9.9 6.3 10.3C5.9 10.7 5.9 11.3 6.3 11.7L10.3 15.7C9.9 15.3 9.9 14.7 10.3 14.3Z" fill="currentColor"/>
-                                                            <path d="M22 12C22 17.5 17.5 22 12 22C6.5 22 2 17.5 2 12C2 6.5 6.5 2 12 2C17.5 2 22 6.5 22 12ZM11.7 15.7L17.7 9.70001C18.1 9.30001 18.1 8.69999 17.7 8.29999C17.3 7.89999 16.7 7.89999 16.3 8.29999L11 13.6L7.70001 10.3C7.30001 9.9 6.7 9.9 6.3 10.3C5.9 10.7 5.9 11.3 6.3 11.7L10.3 15.7C10.7 16.1 11.3 16.1 11.7 15.7Z" fill="currentColor"/>
-                                                        </svg>
-                                                    </span>
-                                                    <span class="d-block fw-semibold text-start">
-                                                        <span class="text-dark fw-bold d-block fs-4 mb-2">Cash</span>
-                                                        <span class="text-muted fw-semibold fs-6">Bayar di Tempat</span>
-                                                    </span>
-                                                </label>
-                                            </div>
-                                            <!--end::Cash Option-->
-
                                             <!--begin::Midtrans/Card Option-->
-                                            <div class="col-6 col-lg-3">
-                                                <input type="radio" class="btn-check" name="payment_method" value="midtrans" id="payment_midtrans">
+                                            <div class="col-6 col-lg-4">
+                                                <input type="radio" class="btn-check" name="payment_method" value="midtrans" id="payment_midtrans" required checked>
                                                 <label class="btn btn-outline btn-outline-dashed btn-active-light-primary p-7 d-flex align-items-center" for="payment_midtrans">
                                                     <span class="svg-icon svg-icon-3x me-5">
                                                         <!-- credit card icon -->

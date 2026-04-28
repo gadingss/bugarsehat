@@ -100,22 +100,8 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="mb-3">
-                        <label for="payment_method" class="form-label">Metode Pembayaran <span class="text-danger">*</span></label>
-                        @if(auth()->user()->hasRole('User:Member'))
-                            <input type="text" class="form-control" value="Online Payment (Midtrans)" readonly>
-                            <input type="hidden" name="payment_method" value="midtrans">
-                        @else
-                            <select class="form-select @error('payment_method') is-invalid @enderror" id="payment_method" name="payment_method" required>
-                                <option value="">-- Pilih Metode --</option>
-
-                                <option value="cash" {{ old('payment_method') == 'cash' ? 'selected' : '' }}>Tunai</option>
-                                <option value="qris" {{ old('payment_method') == 'qris' ? 'selected' : '' }}>QRIS</option>
-                                <option value="midtrans" {{ old('payment_method') == 'midtrans' ? 'selected' : '' }}>Midtrans</option>
-                            </select>
-                        @endif
-                        @error('payment_method')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
+                        <input type="text" class="form-control" value="Online Payment (Midtrans)" readonly>
+                        <input type="hidden" name="payment_method" value="midtrans">
                     </div>
                 </div>
                 

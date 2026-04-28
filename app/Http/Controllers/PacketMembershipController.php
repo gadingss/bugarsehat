@@ -211,7 +211,7 @@ class PacketMembershipController extends Controller
 
         $validator = Validator::make($request->all(), [
             // 'midtrans' option represents Midtrans gateway
-            'payment_method' => ['required', 'string', Rule::in(['qris', 'cash', 'transfer', 'midtrans', 'free'])],
+            'payment_method' => ['required', 'string', Rule::in(['midtrans', 'free'])],
             'notes' => 'nullable|string|max:500',
         ]);
 
@@ -233,7 +233,7 @@ class PacketMembershipController extends Controller
                     'quantity' => 1,
                     'transaction_date' => now(),
                     'amount' => $packet->price,
-                    'status' => $request->payment_method === 'cash' ? 'waiting_for_cash_payment' : 'pending',
+                    'status' => 'pending',
                 ]);
             }
 
@@ -258,23 +258,6 @@ class PacketMembershipController extends Controller
                 $responseData['total'] = $transaction->amount;
 
                 switch ($request->payment_method) {
-                    case 'qris':
-                        $qrString = "Invoice:{$transaction->invoice_id};Amount:{$transaction->amount}";
-                        $responseData['qr_code_url'] = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' . urlencode($qrString);
-                        $responseData['message'] = 'Pindai Kode QR untuk menyelesaikan pembayaran.';
-                        break;
-                    case 'transfer':
-                        $responseData['bank_details'] = [
-                            'bank_name' => config('payment.bank_name'),
-                            'account_number' => config('payment.account_number'),
-                            'account_name' => config('payment.account_name'),
-                        ];
-                        $responseData['message'] = 'Silakan transfer ke rekening berikut.';
-                        break;
-                    case 'cash':
-                        $responseData['message'] = 'Berhasil! Silakan lakukan pembayaran tunai di kasir.';
-                        $responseData['redirect_url'] = route('transaction.history');
-                        break;
                     case 'midtrans':
                         // initialize midtrans configuration
                         Config::$serverKey      = config('midtrans.server_key');
