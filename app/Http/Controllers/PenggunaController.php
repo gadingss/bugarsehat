@@ -62,7 +62,7 @@ class PenggunaController extends Controller
             'role' => 'Member',
         ]);
 
-        return redirect()->route('member.index')->with('success', 'Member berhasil ditambahkan!');
+        return redirect()->route('owner.member.index')->with('success', 'Member berhasil ditambahkan!');
     }
 
     public function updateMember(Request $request, $id)
@@ -77,7 +77,7 @@ class PenggunaController extends Controller
 
         $member->update($request->only(['name', 'email', 'phone']));
 
-        return redirect()->route('member.index')->with('success', 'Member berhasil diperbarui!');
+        return redirect()->route('owner.member.index')->with('success', 'Member berhasil diperbarui!');
     }
 
     public function destroyMember($id)
@@ -85,7 +85,7 @@ class PenggunaController extends Controller
         $member = User::findOrFail($id);
         $member->delete();
 
-        return redirect()->route('member.index')->with('success', 'Member berhasil dihapus!');
+        return redirect()->route('owner.member.index')->with('success', 'Member berhasil dihapus!');
     }
 
 

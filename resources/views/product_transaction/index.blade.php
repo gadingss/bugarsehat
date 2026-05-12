@@ -70,8 +70,8 @@
                                                 </div>
                                             </div>
                                             <div>
-                                                <div class="fw-bold">{{ $transaction->product->name }}</div>
-                                                <div class="text-muted fs-7">{{ $transaction->product->category }}</div>
+                                                <div class="fw-bold">{{ $transaction->product->name ?? 'Produk Tidak Ditemukan' }}</div>
+                                                <div class="text-muted fs-7">{{ $transaction->product->category ?? '-' }}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -83,8 +83,8 @@
                                                 </div>
                                             </div>
                                             <div>
-                                                <div class="fw-bold">{{ $transaction->user->name }}</div>
-                                                <div class="text-muted fs-7">{{ $transaction->user->email }}</div>
+                                                <div class="fw-bold">{{ $transaction->user->name ?? 'User Tidak Ditemukan' }}</div>
+                                                <div class="text-muted fs-7">{{ $transaction->user->email ?? '-' }}</div>
                                             </div>
                                         </div>
                                     </td>
