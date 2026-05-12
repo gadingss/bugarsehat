@@ -54,13 +54,15 @@ class PenggunaController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
-            'role' => 'Member',
+            'role' => 'member',
         ]);
+
+        $user->assignRole('User:Member');
 
         return redirect()->route('owner.member.index')->with('success', 'Member berhasil ditambahkan!');
     }
